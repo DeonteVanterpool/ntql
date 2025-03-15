@@ -2,16 +2,114 @@ package tbql
 
 import "fmt"
 
-var validSubjects = map[string][]string {
-    "name": {"startswith", "endswith", "contains", "equals"},
-    "due": {"before", "after", "equals"},
-    "status": {"equals"},
-    "priority": {"equals", "lessthan", "greaterthan", "lessthanorequal", "greaterthanorequal"},
-    "project": {"equals"},
-    "createdAt": {"before", "after", "equals"},
-    "updatedAt": {"before", "after", "equals"},
-    "completedAt": {"before", "after", "equals"},
-    "createdBy": {"equals"},
+type Type int
+
+const (
+    TypeString Type = iota + 1
+    TypeInt
+    TypeDate
+)
+
+type Subject struct {
+    Name string
+    Aliases []string
+    ValidVerbs []Verb
+    ValidTypes []Type
+}
+
+type Verb struct {
+    Name string
+    Aliases []string
+}
+
+var validSubjects = []Subject{
+    {
+        Name: "name",
+        Aliases: []string{"title"},
+        ValidVerbs: []Verb{
+            {Name: "startswith", Aliases: []string{}},
+            {Name: "endswith", Aliases: []string{}},
+            {Name: "contains", Aliases: []string{}},
+            {Name: "equals", Aliases: []string{"eq"}},
+        },
+        ValidTypes: []Type{TypeString},
+    },
+    {
+        Name: "due",
+        Aliases: []string{"deadline"},
+        ValidVerbs: []Verb{
+            {Name: "before", Aliases: []string{}},
+            {Name: "after", Aliases: []string{}},
+            {Name: "equals", Aliases: []string{}},
+        },
+        ValidTypes: []Type{TypeDate},
+    },
+    {
+        Name: "status",
+        Aliases: []string{"state"},
+        ValidVerbs: []Verb{
+            {Name: "equals", Aliases: []string{"eq"}},
+        },
+        ValidTypes: []Type{TypeString},
+    },
+    {
+        Name: "priority",
+        Aliases: []string{},
+        ValidVerbs: []Verb{
+            {Name: "equals", Aliases: []string{"eq"}},
+            {Name: "lessthan", Aliases: []string{"lt"}},
+            {Name: "greaterthan", Aliases: []string{"gt"}},
+            {Name: "lessthanorequal", Aliases: []string{"lte"}},
+            {Name: "greaterthanorequal", Aliases: []string{"gte"}},
+        },
+        ValidTypes: []Type{TypeInt},
+    },
+    {
+        Name: "project",
+        Aliases: []string{},
+        ValidVerbs: []Verb{
+            {Name: "equals", Aliases: []string{"eq"}},
+        },
+        ValidTypes: []Type{TypeString},
+    },
+    {
+        Name: "createdAt",
+        Aliases: []string{},
+        ValidVerbs: []Verb{
+            {Name: "before", Aliases: []string{}},
+            {Name: "after", Aliases: []string{}},
+            {Name: "equals", Aliases: []string{}},
+        },
+        ValidTypes: []Type{TypeDate},
+    },
+    {
+        Name: "updatedAt",
+        Aliases: []string{},
+        ValidVerbs: []Verb{
+            {Name: "before", Aliases: []string{}},
+            {Name: "after", Aliases: []string{}},
+            {Name: "equals", Aliases: []string{}},
+        },
+        ValidTypes: []Type{TypeDate},
+    },
+    {
+        Name: "completedAt",
+        Aliases: []string{},
+        ValidVerbs: []Verb{
+            {Name: "before", Aliases: []string{}},
+            {Name: "after", Aliases: []string{}},
+            {Name: "equals", Aliases: []string{}},
+        },
+        ValidTypes: []Type{TypeDate},
+    },
+    {
+        Name: "createdBy",
+        Aliases: []string{},
+        ValidVerbs: []Verb{
+            {Name: "equals", Aliases: []string{"eq"}},
+        },
+        ValidTypes: []Type{TypeString},
+    },
 }
 
 func QueryAnd(left QueryExpr, right QueryExpr) QueryExpr {

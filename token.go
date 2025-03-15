@@ -6,48 +6,48 @@ type TokenType int
 
 const (
 	// Single-character tokens
-	Bang TokenType = iota + 1
-	Dot
-	Colon
+	TokenBang TokenType = iota + 1
+	TokenDot
+	TokenColon
 
     // Grouping
-	LParen
-	RParen
+	TokenLParen
+	TokenRParen
 
 	// Literals
-	Identifier
-	String
-	Number
-	Date
+	TokenIdentifier
+	TokenString
+	TokenNumber
+	TokenDate
 
 	// Operators
-	And
-	Or
+	TokenAnd
+	TokenOr
 )
 
 func (t TokenType) String() string {
 	switch t {
-	case Bang:
+	case TokenBang:
 		return "!"
-	case Dot:
+	case TokenDot:
 		return "."
-	case Colon:
+	case TokenColon:
 		return ":"
-	case LParen:
+	case TokenLParen:
 		return "("
-	case RParen:
+	case TokenRParen:
 		return ")"
-	case Identifier:
+	case TokenIdentifier:
 		return "Identifier"
-	case String:
+	case TokenString:
 		return "String"
-	case Number:
+	case TokenNumber:
 		return "Number"
-	case Date:
+	case TokenDate:
 		return "Date"
-	case And:
+	case TokenAnd:
 		return "AND"
-	case Or:
+	case TokenOr:
 		return "OR"
 	}
 	return "UnnamedTokenType"
