@@ -231,3 +231,38 @@ func (l *Tokenizer) Error(e error) error {
 	return fmt.Errorf("Error: %s", e.Error())
 }
 
+type ErrorCode int
+const (
+    EndOfInput ErrorCode = iota
+    InvalidInput
+)
+
+type TokenizationError struct {
+	Message string
+    Position int
+    Code ErrorCode
+}
+
+func (e ErrorCode) String() string {
+    switch e {
+    case EndOfInput:
+        return "EndOfInput"
+    case InvalidInput:
+        return "InvalidInput"
+    }
+    return "UnnamedErrorCode"
+}
+
+func NewTokenizationError(code ErrorCode, position int, message string) *TokenizationError {
+    return &TokenizationError{
+        Code: code,
+        Position: position,
+        Message: message,
+    }
+}
+
+func (e *TokenizationError) Error() string {
+    return fmt.Sprintf("%s error at position %d: %s", e.Code, e.Position, e.Message)
+}
+
+
