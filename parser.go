@@ -158,13 +158,13 @@ func NewParser(tokens []Token) *Parser {
 }
 
 func (p *Parser) Query() (*Query, error) {
-    if (p.match(LParen)) {
+    if (p.match(TokenLParen)) {
         expr, err := p.Expression()
         if err != nil {
             return nil, err
         }
 
-        if !p.match(RParen) {
+        if !p.match(TokenRParen) {
             return nil, NewParserError(InvalidInput, p.Pos, "Expected closing parenthesis")
         }
 
@@ -189,7 +189,7 @@ func (p *Parser) OrExpr() (QueryExpr, error) {
         return nil, err
     }
     
-    for p.match(Or) {
+    for p.match(TokenOr) {
         right, err := p.AndExpr()
         if err != nil {
             return nil, err
@@ -205,7 +205,7 @@ func (p *Parser) AndExpr() (QueryExpr, error) {
         return nil, err
     }
 
-    for p.match(And) {
+    for p.match(TokenAnd) {
         right, err := p.NotExpr()
         if err != nil {
             return nil, err
@@ -216,7 +216,7 @@ func (p *Parser) AndExpr() (QueryExpr, error) {
 }
 
 func (p *Parser) NotExpr() (QueryExpr, error) {
-    if p.match(Bang) {
+    if p.match(TokenBang) {
         expr, err := p.Term()
         if err != nil {
             return nil, err
@@ -227,12 +227,12 @@ func (p *Parser) NotExpr() (QueryExpr, error) {
 }
 
 func (p *Parser) Term() (QueryExpr, error) {
-    if p.match(LParen) {
+    if p.match(TokenLParen) {
         expr, err := p.Expression()
         if err != nil {
             return nil, err
         }
-        if !p.match(RParen) {
+        if !p.match(TokenRParen) {
             return nil, NewParserError(InvalidInput, p.Pos, "Expected closing parenthesis")
         }
         return expr, nil
@@ -253,7 +253,7 @@ func (p *Parser) FunctionCall() (QueryExpr, error) {
         
     }
 
-    if !p.match(Dot) {
+    if !p.match(TokenDot) {
         return nil, NewParserError(InvalidInput, p.Pos, "Expected dot")
     }
 
@@ -262,7 +262,7 @@ func (p *Parser) FunctionCall() (QueryExpr, error) {
         return nil, err
     }
 
-    if !p.match(LParen) {
+    if !p.match(TokenLParen) {
         return nil, NewParserError(InvalidInput, p.Pos, "Expected opening parenthesis")
     }
 
@@ -271,7 +271,7 @@ func (p *Parser) FunctionCall() (QueryExpr, error) {
         return nil, err
     }
 
-    if !p.match(RParen) {
+    if !p.match(TokenRParen) {
         return nil, NewParserError(InvalidInput, p.Pos, "Expected closing parenthesis")
     }
 
@@ -311,5 +311,4 @@ func (p *Parser) isAtEnd() bool {
 func (p *Parser) previous() Token {
     return p.Tokens[p.Pos-1]
 }
-
 

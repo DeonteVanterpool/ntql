@@ -1,2 +1,2 @@
-# tbql
-Parser library for query language for upcoming TaskBun app Query Language
+# ntql
+Parser library for query language for upcoming NolaTask app Query Language
