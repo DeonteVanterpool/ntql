@@ -17,11 +17,72 @@ type QueryExpr interface {
 	ToSQL() (string, error)
 }
 
+type Operator string // I chose string over iota to increase resilience to changes, especially for communication between the frontend and backend
+
+const (
+    // Binary operators
+    OperatorAnd Operator = "AND"
+    OperatorOr  Operator = "OR"
+    OperatorXor Operator = "XOR"
+
+    // Unary operators
+    OperatorNot Operator = "NOT"
+
+    // Comparison operators
+    OperatorEq  Operator = "equals"
+    OperatorNeq Operator = "notEquals"
+    OperatorGt  Operator = "greaterThan"
+    OperatorLt  Operator = "lessThan"
+    OperatorGte Operator = "greaterThanOrEquals"
+    OperatorLte Operator = "lessThanOrEquals"
+
+    // String operators
+    OperatorCnt Operator = "contains"
+    OperatorSw  Operator = "startsWith"
+    OperatorEw  Operator = "endsWith"
+)
+
+func NewOperator(s string) (Operator, error) {
+    if s == "AND" {
+        return OperatorAnd, nil
+    } else if s == "OR" {
+        return OperatorOr, nil
+    } else if s == "XOR" {
+        return OperatorXor, nil
+    } else if s == "NOT" {
+        return OperatorNot, nil
+    } else if s == "equals" {
+        return OperatorEq, nil
+    } else if s == "notEquals" {
+        return OperatorNeq, nil
+    } else if s == "greaterThan" {
+        return OperatorGt, nil
+    } else if s == "lessThan" {
+        return OperatorLt, nil
+    } else if s == "greaterThanOrEquals" {
+        return OperatorGte, nil
+    } else if s == "lessThanOrEquals" {
+        return OperatorLte, nil
+    } else if s == "contains" {
+        return OperatorCnt, nil
+    } else if s == "startsWith" {
+        return OperatorSw, nil
+    } else if s == "endsWith" {
+        return OperatorEw, nil
+    } else {
+        return "", errors.New("invalid operator")
+    }
+}
+
+func (o Operator) ToStr() string {
+    return string(o)
+}
+
 // QueryBinaryOp represents a binary operation in a query.
 type QueryBinaryOp struct {
 	Left  QueryExpr `json:"left"`
 	Right QueryExpr `json:"right"`
-	Op    string    `json:"op"`
+    Op    Operator `json:"op"`
 }
 
 func (q *QueryBinaryOp) ToSQL() (string, error) {
@@ -34,11 +95,11 @@ func (q *QueryBinaryOp) ToSQL() (string, error) {
 		return "", err
 	}
 	switch q.Op {
-	case "&":
+	case "AND":
 		return "(" + left + " AND " + right + ")", nil
-	case "|":
+	case "OR":
 		return "(" + left + " OR " + right + ")", nil
-	case "^":
+	case "XOR":
 		return "(" + left + " XOR " + right + ")", nil
 	default:
 		return "", errors.New("invalid operator")
@@ -47,8 +108,8 @@ func (q *QueryBinaryOp) ToSQL() (string, error) {
 
 // QueryUnaryOp represents a unary operation in a query.
 type QueryUnaryOp struct {
-	Operator string    `json:"operator"`
 	Operand  QueryExpr `json:"operand"`
+    Operator Operator `json:"operator"`
 }
 
 func (q *QueryUnaryOp) ToSQL() (string, error) {
@@ -67,7 +128,7 @@ func (q *QueryUnaryOp) ToSQL() (string, error) {
 // QueryCondition represents a condition in a query.
 type QueryCondition struct {
 	Field    string `json:"field"`
-	Operator string `json:"operator"`
+    Operator Operator `json:"operator"`
 	Value    string `json:"value"`
 }
 
@@ -103,20 +164,20 @@ func (c *QueryCondition) ToSQL() (string, error) {
 
 	if c.Field == "completed" {
 		if (c.Value == "true" && c.Operator == "=") || (c.Value == "false" && c.Operator == "!=") {
-            // return if completed_at before now
-            return "completed_at < NOW()", nil
+			// return if completed_at before now
+			return "completed_at < NOW()", nil
 		} else if (c.Value == "true" && c.Operator == "!=") || (c.Value == "false" && c.Operator == "=") {
-            // return if completed_at after now or NULL
-            return "completed_at > NOW() OR completed_at IS NULL", nil
+			// return if completed_at after now or NULL
+			return "completed_at > NOW() OR completed_at IS NULL", nil
 		} else {
 			return "", errors.New("invalid value")
 		}
 	}
 	if slices.Contains(date_types, c.Field) {
-        // check if datetime is in the ISO 8601 format
-        if !regexp.MustCompile(`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$`).MatchString(c.Value) {
-            return "", errors.New("invalid value")
-        }
+		// check if datetime is in the ISO 8601 format
+		if !regexp.MustCompile(`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$`).MatchString(c.Value) {
+			return "", errors.New("invalid value")
+		}
 		switch c.Operator {
 		case "=":
 			return c.Field + " = '" + c.Value + "'", nil
@@ -143,9 +204,9 @@ func (c *QueryCondition) ToSQL() (string, error) {
 			return "", errors.New("invalid operator")
 		}
 	} else if slices.Contains(string_types, c.Field) {
-        if !regexp.MustCompile(`^[a-zA-Z0-9\-/: ]+$`).MatchString(c.Value) {
-            return "", errors.New("invalid value")
-        }
+		if !regexp.MustCompile(`^[a-zA-Z0-9\-/: ]+$`).MatchString(c.Value) {
+			return "", errors.New("invalid value")
+		}
 		switch c.Operator {
 		case "=":
 			return c.Field + " = '" + c.Value + "'", nil
@@ -199,7 +260,11 @@ func buildQueryConditionFromMap(m map[string]interface{}) (*QueryCondition, erro
 	if !ok {
 		return nil, errors.New("invalid value")
 	}
-	return &QueryCondition{Field: field, Operator: operator, Value: value}, nil
+    op, err := NewOperator(operator)
+    if err != nil {
+        return nil, err
+    }
+	return &QueryCondition{Field: field, Operator: op, Value: value}, nil
 }
 
 func buildQueryBinaryOpFromMap(m map[string]interface{}) (*QueryBinaryOp, error) {
@@ -223,7 +288,12 @@ func buildQueryBinaryOpFromMap(m map[string]interface{}) (*QueryBinaryOp, error)
 	if !ok {
 		return nil, errors.New("invalid operator")
 	}
-	return &QueryBinaryOp{Left: left_expr, Right: right_expr, Op: op}, nil
+
+    operator, err := NewOperator(op)
+    if err != nil {
+        return nil, err
+    }
+	return &QueryBinaryOp{Left: left_expr, Right: right_expr, Op: operator}, nil
 }
 
 func buildQueryUnaryOpFromMap(m map[string]interface{}) (*QueryUnaryOp, error) {
@@ -239,7 +309,11 @@ func buildQueryUnaryOpFromMap(m map[string]interface{}) (*QueryUnaryOp, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &QueryUnaryOp{Operator: operator, Operand: operand_expr}, nil
+    op, err := NewOperator(operator)
+    if err != nil {
+        return nil, err
+    }
+	return &QueryUnaryOp{Operator: op, Operand: operand_expr}, nil
 }
 
 func BuildQueryExprFromMap(m map[string]interface{}) (QueryExpr, error) {
@@ -296,4 +370,3 @@ func BuildQueryExprFromMap(m map[string]interface{}) (QueryExpr, error) {
 
 	return nil, errors.New("invalid query")
 }
-

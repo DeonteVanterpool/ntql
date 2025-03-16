@@ -37,15 +37,15 @@ func (l *Tokenizer) ScanToken() error {
 	}
 	switch c {
 	case '!':
-		return l.appendToken(Bang)
+		return l.appendToken(TokenBang)
 	case '(':
-		return l.appendToken(LParen)
+		return l.appendToken(TokenLParen)
 	case ')':
-		return l.appendToken(RParen)
+		return l.appendToken(TokenRParen)
 	case '.':
-		return l.appendToken(Dot)
+		return l.appendToken(TokenDot)
 	case ':':
-		return l.appendToken(Colon)
+		return l.appendToken(TokenColon)
 	case '"':
 		return l.Quote()
 	case ' ':
@@ -94,9 +94,9 @@ func (l *Tokenizer) Digit() error {
 		if !dateRegexp.MatchString(num) {
 			return NewTokenizationError(InvalidInput, l.Pos, fmt.Sprintf("Invalid date: %s", num))
 		}
-		l.appendLiteral(Date, num)
+		l.appendLiteral(TokenDate, num)
 	} else {
-		l.appendLiteral(Number, num)
+		l.appendLiteral(TokenNumber, num)
 	}
 	return nil
 }
@@ -131,7 +131,7 @@ func (l *Tokenizer) Quote() error {
 		s += string(c)
 	}
 
-	l.appendLiteral(String, s)
+	l.appendLiteral(TokenString, s)
 
 	return nil
 }
@@ -164,17 +164,17 @@ func (l *Tokenizer) Identifier() error {
 
 	if keyword(id) {
 		if id == "AND" {
-			l.appendToken(And)
+			l.appendToken(TokenAnd)
 		} else if id == "OR" {
-			l.appendToken(Or)
+			l.appendToken(TokenOr)
 
 		} else if id == "NOT" {
-			l.appendToken(Bang)
+			l.appendToken(TokenBang)
 		} else {
 			return fmt.Errorf("Unimplemented keyword: %s", id)
 		}
 	} else {
-		l.appendLiteral(Identifier, id)
+		l.appendLiteral(TokenIdentifier, id)
 	}
 
 	return nil

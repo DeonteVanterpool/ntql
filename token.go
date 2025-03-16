@@ -6,7 +6,7 @@ type TokenType int
 
 const (
 	// Single-character tokens
-	TokenBang TokenType = iota + 1
+	TokenBang TokenType = iota
 	TokenDot
 	TokenColon
 
