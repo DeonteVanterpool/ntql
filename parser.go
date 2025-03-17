@@ -2,19 +2,21 @@ package tbql
 
 import "fmt"
 
-type Type int
+// Data types for any objects passed as an argument to a function in the NTQL query
+type DType int
 
 const (
-	TypeString Type = iota
-	TypeInt
-	TypeDate
+	DTypeString DType = iota
+	DTypeInt
+	DTypeDate
+    DTypeIdentifier
 )
 
 type Subject struct {
 	Name       string
 	Aliases    []string
 	ValidVerbs []Verb
-	ValidTypes []Type
+	ValidTypes []DType
 }
 
 type Verb struct {
@@ -24,15 +26,15 @@ type Verb struct {
 
 var validSubjects = []Subject{
 	{
-		Name:    "name",
-		Aliases: []string{"title"},
+		Name:    "title",
+		Aliases: []string{"name"},
 		ValidVerbs: []Verb{
 			{Name: "startswith", Aliases: []string{}},
 			{Name: "endswith", Aliases: []string{}},
 			{Name: "contains", Aliases: []string{}},
 			{Name: "equals", Aliases: []string{"eq"}},
 		},
-		ValidTypes: []Type{TypeString},
+		ValidTypes: []DType{DTypeString},
 	},
 	{
 		Name:    "due",
@@ -42,7 +44,7 @@ var validSubjects = []Subject{
 			{Name: "after", Aliases: []string{}},
 			{Name: "equals", Aliases: []string{}},
 		},
-		ValidTypes: []Type{TypeDate},
+		ValidTypes: []DType{DTypeDate},
 	},
 	{
 		Name:    "status",
@@ -50,7 +52,7 @@ var validSubjects = []Subject{
 		ValidVerbs: []Verb{
 			{Name: "equals", Aliases: []string{"eq"}},
 		},
-		ValidTypes: []Type{TypeString},
+		ValidTypes: []DType{DTypeString},
 	},
 	{
 		Name:    "priority",
@@ -62,7 +64,7 @@ var validSubjects = []Subject{
 			{Name: "lessthanorequal", Aliases: []string{"lte"}},
 			{Name: "greaterthanorequal", Aliases: []string{"gte"}},
 		},
-		ValidTypes: []Type{TypeInt},
+		ValidTypes: []DType{DTypeInt},
 	},
 	{
 		Name:    "project",
@@ -70,7 +72,7 @@ var validSubjects = []Subject{
 		ValidVerbs: []Verb{
 			{Name: "equals", Aliases: []string{"eq"}},
 		},
-		ValidTypes: []Type{TypeString},
+		ValidTypes: []DType{DTypeString},
 	},
 	{
 		Name:    "createdAt",
@@ -80,7 +82,7 @@ var validSubjects = []Subject{
 			{Name: "after", Aliases: []string{}},
 			{Name: "equals", Aliases: []string{}},
 		},
-		ValidTypes: []Type{TypeDate},
+		ValidTypes: []DType{DTypeDate},
 	},
 	{
 		Name:    "updatedAt",
@@ -90,7 +92,7 @@ var validSubjects = []Subject{
 			{Name: "after", Aliases: []string{}},
 			{Name: "equals", Aliases: []string{}},
 		},
-		ValidTypes: []Type{TypeDate},
+		ValidTypes: []DType{DTypeDate},
 	},
 	{
 		Name:    "completedAt",
@@ -100,7 +102,7 @@ var validSubjects = []Subject{
 			{Name: "after", Aliases: []string{}},
 			{Name: "equals", Aliases: []string{}},
 		},
-		ValidTypes: []Type{TypeDate},
+		ValidTypes: []DType{DTypeDate},
 	},
 	{
 		Name:    "createdBy",
@@ -108,34 +110,16 @@ var validSubjects = []Subject{
 		ValidVerbs: []Verb{
 			{Name: "equals", Aliases: []string{"eq"}},
 		},
-		ValidTypes: []Type{TypeString},
+		ValidTypes: []DType{DTypeString},
 	},
-}
-
-func QueryAnd(left QueryExpr, right QueryExpr) *QueryBinaryOp {
-	return &QueryBinaryOp{Left: left, Right: right, Op: "AND"}
-}
-
-func QueryOr(left QueryExpr, right QueryExpr) *QueryBinaryOp {
-	return &QueryBinaryOp{Left: left, Right: right, Op: "OR"}
-}
-
-func QueryNot(expr QueryExpr) *QueryUnaryOp {
-	return &QueryUnaryOp{Operand: expr, Operator: "NOT"}
-}
-
-func QueryFuncCall(subject string, verb string, value string) (*QueryCondition, error) {
-	op, err := NewOperator(verb)
-	if err != nil {
-		return nil, err
-	}
-	return &QueryCondition{Field: subject, Operator: op, Value: value}, nil
-}
-
-type BinaryExpression struct {
-	Left  *BinaryExpression
-	Right *BinaryExpression
-	Op    string
+    {
+        Name: "tag",
+        Aliases: []string{},
+        ValidVerbs: []Verb{
+            {Name: "equals", Aliases: []string{"eq"}},
+        },
+        ValidTypes: []DType{DTypeIdentifier},
+    },
 }
 
 type ParserError struct {
@@ -148,17 +132,95 @@ func (e *ParserError) Error() string {
 	return fmt.Sprintf("%s error at position %d: %s", e.Code, e.Position, e.Message)
 }
 
-func NewParserError(code ErrorCode, position int, message string) *ParserError {
+// TODO: Sanitize input
+type Parser struct {
+	Tokens []Token
+	Pos    int
+}
+
+func (p *Parser) Parse() (QueryExpr, error) {
+    return p.Query()
+}
+
+func (p *Parser) NewParserError(code ErrorCode, message string) *ParserError {
 	return &ParserError{
 		Code:     code,
-		Position: position,
+		Position: p.Pos,
 		Message:  message,
 	}
 }
 
-type Parser struct {
-	Tokens []Token
-	Pos    int
+type ValueExpr interface {
+	Transform(subject string, verb string) (QueryExpr, error)
+}
+
+type ValueBinaryOp struct {
+	Operator Operator
+	Left     ValueExpr
+	Right    ValueExpr
+}
+
+type ValueUnaryOp struct {
+	Operator Operator
+	Operand  ValueExpr
+}
+
+type Value struct {
+	Value string
+}
+
+func (v *Value) Transform(subject string, verb string) (QueryExpr, error) {
+	return NewQueryCondition(subject, verb, v.Value)
+}
+
+func (v *ValueBinaryOp) Transform(subject string, verb string) (QueryExpr, error) {
+	left, err := v.Left.Transform(subject, verb)
+	if err != nil {
+		return nil, err
+	}
+	right, err := v.Right.Transform(subject, verb)
+	if err != nil {
+		return nil, err
+	}
+	return &QueryBinaryOp{Left: left, Right: right, Operator: v.Operator}, nil
+}
+
+func (v *ValueUnaryOp) Transform(subject string, verb string) (QueryExpr, error) {
+	operand, err := v.Operand.Transform(subject, verb)
+	if err != nil {
+		return nil, err
+	}
+	return &QueryUnaryOp{Operand: operand, Operator: v.Operator}, nil
+}
+
+func (p *Parser) match(t TokenType) bool {
+	if p.Pos >= len(p.Tokens) {
+		return false
+	}
+	if p.Tokens[p.Pos].Type != t {
+		return false
+	}
+	p.advance()
+	return true
+}
+
+func (p *Parser) advance() {
+	p.Pos++
+}
+
+func (p *Parser) peek() Token {
+	if p.Pos >= len(p.Tokens) {
+		return Token{}
+	}
+	return p.Tokens[p.Pos]
+}
+
+func (p *Parser) isAtEnd() bool {
+	return p.Pos >= len(p.Tokens)
+}
+
+func (p *Parser) previous() Token {
+	return p.Tokens[p.Pos-1]
 }
 
 func NewParser(tokens []Token) *Parser {
@@ -184,7 +246,7 @@ func (p *Parser) OrExpr() (QueryExpr, error) {
 		if err != nil {
 			return nil, err
 		}
-		expr = QueryOr(expr, right)
+		expr = NewQueryOr(expr, right)
 	}
 	return expr, nil
 }
@@ -200,7 +262,7 @@ func (p *Parser) AndExpr() (QueryExpr, error) {
 		if err != nil {
 			return nil, err
 		}
-		expr = QueryAnd(expr, right)
+		expr = NewQueryAnd(expr, right)
 	}
 	return expr, nil
 }
@@ -211,7 +273,7 @@ func (p *Parser) NotExpr() (QueryExpr, error) {
 		if err != nil {
 			return nil, err
 		}
-		return QueryNot(expr), nil
+		return NewQueryNot(expr), nil
 	}
 	return p.Term()
 }
@@ -223,7 +285,7 @@ func (p *Parser) Term() (QueryExpr, error) {
 			return nil, err
 		}
 		if !p.match(TokenRParen) {
-			return nil, NewParserError(InvalidInput, p.Pos, "Expected closing parenthesis")
+			return nil, p.NewParserError(InvalidInput, "Expected closing parenthesis")
 		}
 		return expr, nil
 	} else {
@@ -244,7 +306,7 @@ func (p *Parser) FunctionCall() (QueryExpr, error) {
 	}
 
 	if !p.match(TokenDot) {
-		return nil, NewParserError(InvalidInput, p.Pos, "Expected dot")
+		return nil, p.NewParserError(InvalidInput, "Expected dot")
 	}
 
 	verb, err := p.Verb(subject)
@@ -253,7 +315,7 @@ func (p *Parser) FunctionCall() (QueryExpr, error) {
 	}
 
 	if !p.match(TokenLParen) {
-		return nil, NewParserError(InvalidInput, p.Pos, "Expected opening parenthesis")
+		return nil, p.NewParserError(InvalidInput, "Expected opening parenthesis")
 	}
 
 	valueExpr, err := p.ValueExpr()
@@ -262,7 +324,7 @@ func (p *Parser) FunctionCall() (QueryExpr, error) {
 	}
 
 	if !p.match(TokenRParen) {
-		return nil, NewParserError(InvalidInput, p.Pos, "Expected closing parenthesis")
+		return nil, p.NewParserError(InvalidInput, "Expected closing parenthesis")
 	}
 
 	return valueExpr.Transform(subject, verb)
@@ -281,9 +343,9 @@ func (p *Parser) Subject() (string, error) {
                 }
             }
         }
-        return "", NewParserError(InvalidInput, p.Pos, "Invalid subject")
+        return "", p.NewParserError(InvalidInput, "Invalid subject: " + subject)
     } else {
-        return "", NewParserError(InvalidInput, p.Pos, "Expected subject")
+        return "", p.NewParserError(InvalidInput, "Expected subject")
     }
 }
 
@@ -302,56 +364,13 @@ func (p *Parser) Verb(subject string) (string, error) {
                         }
                     }
                 }
-                return "", NewParserError(InvalidInput, p.Pos, "Invalid verb")
+                return "", p.NewParserError(InvalidInput, "Invalid verb: " + verb)
             } else {
-                return "", NewParserError(InvalidInput, p.Pos, "Expected verb")
+                return "", p.NewParserError(InvalidInput, "Expected verb")
             }
         }
     }
-    return "", NewParserError(InvalidInput, p.Pos, "Invalid subject")
-}
-
-type ValueExpr interface {
-	Transform(subject string, verb string) (QueryExpr, error)
-}
-
-type ValueBinaryOp struct {
-	Operator Operator
-	Left     ValueExpr
-	Right    ValueExpr
-}
-
-type ValueUnaryOp struct {
-	Operator Operator
-	Operand  ValueExpr
-}
-
-type Value struct {
-	Value string
-}
-
-func (v *Value) Transform(subject string, verb string) (QueryExpr, error) {
-	return QueryFuncCall(subject, verb, v.Value)
-}
-
-func (v *ValueBinaryOp) Transform(subject string, verb string) (QueryExpr, error) {
-	left, err := v.Left.Transform(subject, verb)
-	if err != nil {
-		return nil, err
-	}
-	right, err := v.Right.Transform(subject, verb)
-	if err != nil {
-		return nil, err
-	}
-	return &QueryBinaryOp{Left: left, Right: right, Op: v.Operator}, nil
-}
-
-func (v *ValueUnaryOp) Transform(subject string, verb string) (QueryExpr, error) {
-	operand, err := v.Operand.Transform(subject, verb)
-	if err != nil {
-		return nil, err
-	}
-	return &QueryUnaryOp{Operand: operand, Operator: v.Operator}, nil
+    return "", p.NewParserError(InvalidInput, "Invalid subject")
 }
 
 func (p *Parser) ValueExpr() (ValueExpr, error) {
@@ -405,7 +424,7 @@ func (p *Parser) ValueNot() (ValueExpr, error) {
 			return nil, err
 		}
 		if !p.match(TokenRParen) {
-			return nil, NewParserError(InvalidInput, p.Pos, "Expected closing parenthesis")
+			return nil, p.NewParserError(InvalidInput, "Expected closing parenthesis")
 		}
 		return valueExpr, nil
 	} else {
@@ -424,7 +443,7 @@ func (p *Parser) ValueTerm() (ValueExpr, error) {
             return nil, err
         }
         if !p.match(TokenRParen) {
-            return nil, NewParserError(InvalidInput, p.Pos, "Expected closing parenthesis")
+            return nil, p.NewParserError(InvalidInput, "Expected closing parenthesis")
         }
         return valueExpr, nil
     } else {
@@ -440,36 +459,7 @@ func (p *Parser) ValueObject() (ValueExpr, error) {
 	if p.match(TokenString) || p.match(TokenDate) || p.match(TokenIdentifier) || p.match(TokenNumber) {
 		return &Value{Value: p.previous().Literal}, nil
 	} else {
-		return nil, NewParserError(InvalidInput, p.Pos, "Expected term")
+		return nil, p.NewParserError(InvalidInput, "Expected term")
 	}
 }
 
-func (p *Parser) match(t TokenType) bool {
-	if p.Pos >= len(p.Tokens) {
-		return false
-	}
-	if p.Tokens[p.Pos].Type != t {
-		return false
-	}
-	p.advance()
-	return true
-}
-
-func (p *Parser) advance() {
-	p.Pos++
-}
-
-func (p *Parser) peek() Token {
-	if p.Pos >= len(p.Tokens) {
-		return Token{}
-	}
-	return p.Tokens[p.Pos]
-}
-
-func (p *Parser) isAtEnd() bool {
-	return p.Pos >= len(p.Tokens)
-}
-
-func (p *Parser) previous() Token {
-	return p.Tokens[p.Pos-1]
-}

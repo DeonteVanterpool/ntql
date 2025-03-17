@@ -15,6 +15,7 @@ var string_types = []string{"title", "description"}
 type QueryExpr interface {
 	// ToSQL converts the query expression to a SQL string.
 	ToSQL() (string, error)
+    String() string
 }
 
 type Operator string // I chose string over iota to increase resilience to changes, especially for communication between the frontend and backend
@@ -55,22 +56,22 @@ func NewOperator(s string) (Operator, error) {
         return OperatorEq, nil
     } else if s == "notEquals" {
         return OperatorNeq, nil
-    } else if s == "greaterThan" {
+    } else if s == "greaterThan" || s == "after" {
         return OperatorGt, nil
-    } else if s == "lessThan" {
+    } else if s == "lessThan" || s == "before" {
         return OperatorLt, nil
-    } else if s == "greaterThanOrEquals" {
+    } else if s == "greaterthanorequals" {
         return OperatorGte, nil
-    } else if s == "lessThanOrEquals" {
+    } else if s == "lessthanorequals" {
         return OperatorLte, nil
     } else if s == "contains" {
         return OperatorCnt, nil
-    } else if s == "startsWith" {
+    } else if s == "startswith" {
         return OperatorSw, nil
     } else if s == "endsWith" {
         return OperatorEw, nil
     } else {
-        return "", errors.New("invalid operator")
+        return "", errors.New("invalid operator: " + s)
     }
 }
 
@@ -82,7 +83,11 @@ func (o Operator) ToStr() string {
 type QueryBinaryOp struct {
 	Left  QueryExpr `json:"left"`
 	Right QueryExpr `json:"right"`
-    Op    Operator `json:"op"`
+    Operator    Operator `json:"op"`
+}
+
+func (q *QueryBinaryOp) String() string {
+    return q.Left.String() + " " + q.Operator.ToStr() + " " + q.Right.String()
 }
 
 func (q *QueryBinaryOp) ToSQL() (string, error) {
@@ -94,15 +99,15 @@ func (q *QueryBinaryOp) ToSQL() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	switch q.Op {
-	case "AND":
+	switch q.Operator {
+    case OperatorAnd:
 		return "(" + left + " AND " + right + ")", nil
-	case "OR":
+    case OperatorOr:
 		return "(" + left + " OR " + right + ")", nil
-	case "XOR":
+    case OperatorXor:
 		return "(" + left + " XOR " + right + ")", nil
 	default:
-		return "", errors.New("invalid operator")
+        return "", errors.New("invalid operator: " + q.Operator.ToStr())
 	}
 }
 
@@ -118,11 +123,15 @@ func (q *QueryUnaryOp) ToSQL() (string, error) {
 		return "", err
 	}
 	switch q.Operator {
-	case "!":
+    case OperatorNot:
 		return "(NOT " + "(" + operand + "))", nil
 	default:
-		return "", errors.New("invalid operator")
+        return "", errors.New("invalid operator: " + q.Operator.ToStr())
 	}
+}
+
+func (q *QueryUnaryOp) String() string {
+    return q.Operator.ToStr() + " " + q.Operand.String()
 }
 
 // QueryCondition represents a condition in a query.
@@ -132,119 +141,145 @@ type QueryCondition struct {
 	Value    string `json:"value"`
 }
 
+func (q *QueryCondition) String() string {
+    return q.Field + " " + q.Operator.ToStr() + " " + q.Value
+}
+
+// TODO: Input sanitization
+// Convert the query condition to a SQL string.
 func (c *QueryCondition) ToSQL() (string, error) {
 	if c.Field == "tag" {
 		_, err := strconv.Atoi(c.Value)
 		if err != nil {
 			switch c.Operator {
-			case "=":
+            case OperatorEq:
 				return "tag_id = (SELECT id FROM atomic_tags WHERE title = '" + c.Value + "')", nil
-			case "!=":
+            case OperatorNeq:
 				return "tag_id = (SELECT id FROM atomic_tags WHERE title != '" + c.Value + "')", nil
-			case "contains":
+            case OperatorCnt:
 				return "tag_id = (SELECT id FROM atomic_tags WHERE title LIKE '%" + c.Value + "%')", nil
-			case "startswith":
+            case OperatorSw:
 				return "tag_id = (SELECT id FROM atomic_tags WHERE title LIKE '" + c.Value + "%')", nil
-			case "endswith":
+            case OperatorEw:
 				return "tag_id = (SELECT id FROM atomic_tags WHERE title LIKE '%" + c.Value + "')", nil
 			default:
-				return "", errors.New("invalid operator")
+                return "", errors.New("invalid operator: " + c.Operator.ToStr() + " for field: " + c.Field)
 			}
 		} else {
 			switch c.Operator {
-			case "=":
+            case OperatorEq:
 				return "tag_id = (SELECT id FROM atomic_tags WHERE id = " + c.Value + ")", nil
-			case "!=":
+            case OperatorNeq:
 				return "tag_id = (SELECT id FROM atomic_tags WHERE id != " + c.Value + ")", nil
 			default:
-				return "", errors.New("invalid operator")
+                return "", errors.New("invalid operator: " + c.Operator.ToStr() + " for field: " + c.Field)
 			}
 		}
 	}
 
 	if c.Field == "completed" {
-		if (c.Value == "true" && c.Operator == "=") || (c.Value == "false" && c.Operator == "!=") {
+		if (c.Value == "true" && c.Operator == OperatorEq) || (c.Value == "false" && c.Operator == OperatorNeq) {
 			// return if completed_at before now
 			return "completed_at < NOW()", nil
-		} else if (c.Value == "true" && c.Operator == "!=") || (c.Value == "false" && c.Operator == "=") {
+		} else if (c.Value == "true" && c.Operator == OperatorNeq) || (c.Value == "false" && c.Operator == OperatorEq) {
 			// return if completed_at after now or NULL
 			return "completed_at > NOW() OR completed_at IS NULL", nil
 		} else {
-			return "", errors.New("invalid value")
+            return "", errors.New("invalid value: " + c.Value + " for field: " + c.Field)
 		}
 	}
 	if slices.Contains(date_types, c.Field) {
 		// check if datetime is in the ISO 8601 format
-		if !regexp.MustCompile(`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$`).MatchString(c.Value) {
-			return "", errors.New("invalid value")
+		if !regexp.MustCompile(`^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}Z)?$`).MatchString(c.Value) {
+            return "", errors.New("invalid value: " + c.Value + " for field: " + c.Field)
 		}
 		switch c.Operator {
-		case "=":
+		case OperatorEq:
 			return c.Field + " = '" + c.Value + "'", nil
-		case "!=":
+        case OperatorNeq:
 			return c.Field + " != '" + c.Value + "'", nil
-		case ">":
+        case OperatorGt:
 			return c.Field + " > '" + c.Value + "'", nil
-		case "<":
+        case OperatorLt:
 			return c.Field + " < '" + c.Value + "'", nil
-		case ">=":
+        case OperatorGte:
 			return c.Field + " >= '" + c.Value + "'", nil
-		case "<=":
+        case OperatorLte:
 			return c.Field + " <= '" + c.Value + "'", nil
 		default:
-			return "", errors.New("invalid operator")
+            return "", errors.New("invalid operator: " + c.Operator.ToStr() + " for field: " + c.Field)
 		}
 	} else if slices.Contains(bool_types, c.Field) {
 		switch c.Operator {
-		case "=":
+        case OperatorEq:
 			return c.Field + " = " + c.Value, nil
-		case "!=":
+        case OperatorNeq:
 			return c.Field + " != " + c.Value, nil
 		default:
-			return "", errors.New("invalid operator")
+            return "", errors.New("invalid operator: " + c.Operator.ToStr() + " for field: " + c.Field)
 		}
 	} else if slices.Contains(string_types, c.Field) {
 		if !regexp.MustCompile(`^[a-zA-Z0-9\-/: ]+$`).MatchString(c.Value) {
-			return "", errors.New("invalid value")
+            return "", errors.New("invalid value: " + c.Value + " for field: " + c.Field)
 		}
 		switch c.Operator {
-		case "=":
+        case OperatorEq:
 			return c.Field + " = '" + c.Value + "'", nil
-		case "!=":
+        case OperatorNeq:
 			return c.Field + " != '" + c.Value + "'", nil
-		case "contains":
+        case OperatorCnt:
 			return c.Field + " LIKE '%" + c.Value + "%'", nil
-		case "startswith":
+        case OperatorSw:
 			return c.Field + " LIKE '" + c.Value + "%'", nil
-		case "endswith":
+        case OperatorEw:
 			return c.Field + " LIKE '%" + c.Value + "'", nil
 		default:
-			return "", errors.New("invalid operator")
+            return "", errors.New("invalid operator: " + c.Operator.ToStr() + " for field: " + c.Field)
 		}
 	} else if slices.Contains(numeric_types, c.Field) {
 		_, err := strconv.Atoi(c.Value)
 		if err != nil {
-			return "", errors.New("invalid value")
+            return "", errors.New("invalid value: " + c.Value + " for field: " + c.Field)
 		}
 		switch c.Operator {
-		case "=":
+        case OperatorEq:
 			return c.Field + " = " + c.Value, nil
-		case "!=":
+        case OperatorNeq:
 			return c.Field + " != " + c.Value, nil
-		case ">":
+        case OperatorGt:
 			return c.Field + " > " + c.Value, nil
-		case "<":
+        case OperatorLt:
 			return c.Field + " < " + c.Value, nil
-		case ">=":
+        case OperatorGte:
 			return c.Field + " >= " + c.Value, nil
-		case "<=":
+        case OperatorLte:
 			return c.Field + " <= " + c.Value, nil
 		default:
-			return "", errors.New("invalid operator")
+            return "", errors.New("invalid operator: " + c.Operator.ToStr() + " for field: " + c.Field)
 		}
 	} else {
 		return "", errors.New("invalid field")
 	}
+}
+
+func NewQueryAnd(left QueryExpr, right QueryExpr) *QueryBinaryOp {
+	return &QueryBinaryOp{Left: left, Right: right, Operator: OperatorAnd}
+}
+
+func NewQueryOr(left QueryExpr, right QueryExpr) *QueryBinaryOp {
+	return &QueryBinaryOp{Left: left, Right: right, Operator: OperatorOr}
+}
+
+func NewQueryNot(expr QueryExpr) *QueryUnaryOp {
+	return &QueryUnaryOp{Operand: expr, Operator: OperatorNot}
+}
+
+func NewQueryCondition(subject string, verb string, value string) (*QueryCondition, error) {
+	op, err := NewOperator(verb)
+	if err != nil {
+		return nil, err
+	}
+	return &QueryCondition{Field: subject, Operator: op, Value: value}, nil
 }
 
 func buildQueryConditionFromMap(m map[string]interface{}) (*QueryCondition, error) {
@@ -254,11 +289,11 @@ func buildQueryConditionFromMap(m map[string]interface{}) (*QueryCondition, erro
 	}
 	operator, ok := m["operator"].(string)
 	if !ok {
-		return nil, errors.New("invalid operator")
+        return nil, errors.New("invalid operator: " + operator + " for field: " + field)
 	}
 	value, ok := m["value"].(string)
 	if !ok {
-		return nil, errors.New("invalid value")
+        return nil, errors.New("invalid value: " + value + " for field: " + field)
 	}
     op, err := NewOperator(operator)
     if err != nil {
@@ -286,14 +321,14 @@ func buildQueryBinaryOpFromMap(m map[string]interface{}) (*QueryBinaryOp, error)
 	}
 	op, ok := m["op"].(string)
 	if !ok {
-		return nil, errors.New("invalid operator")
+        return nil, errors.New("invalid operator")
 	}
 
     operator, err := NewOperator(op)
     if err != nil {
         return nil, err
     }
-	return &QueryBinaryOp{Left: left_expr, Right: right_expr, Op: operator}, nil
+	return &QueryBinaryOp{Left: left_expr, Right: right_expr, Operator: operator}, nil
 }
 
 func buildQueryUnaryOpFromMap(m map[string]interface{}) (*QueryUnaryOp, error) {
@@ -370,3 +405,4 @@ func BuildQueryExprFromMap(m map[string]interface{}) (QueryExpr, error) {
 
 	return nil, errors.New("invalid query")
 }
+
