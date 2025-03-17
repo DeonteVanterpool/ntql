@@ -1,6 +1,9 @@
 package tbql
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // Data types for any objects passed as an argument to a function in the NTQL query
 type DType int
@@ -330,15 +333,23 @@ func (p *Parser) FunctionCall() (QueryExpr, error) {
 	return valueExpr.Transform(subject, verb)
 }
 
+func toLowerCase(s string) string {
+    if s == "" {
+        return s
+    }
+    s = strings.ToLower(s)
+    return strings.ReplaceAll(s, "_", "")
+}
+
 func (p *Parser) Subject() (string, error) {
     if p.match(TokenIdentifier) {
         subject := p.previous().Literal
         for _, s := range validSubjects {
-            if s.Name == subject {
-                return subject, nil
+            if toLowerCase(s.Name) == toLowerCase(subject) {
+                return s.Name, nil
             }
             for _, alias := range s.Aliases {
-                if alias == subject {
+                if toLowerCase(alias) == toLowerCase(subject) {
                     return s.Name, nil
                 }
             }
@@ -355,11 +366,11 @@ func (p *Parser) Verb(subject string) (string, error) {
             if p.match(TokenIdentifier) {
                 verb := p.previous().Literal
                 for _, v := range s.ValidVerbs {
-                    if v.Name == verb {
-                        return verb, nil
+                    if toLowerCase(v.Name) == toLowerCase(verb) {
+                        return v.Name, nil
                     }
                     for _, alias := range v.Aliases {
-                        if alias == verb {
+                        if toLowerCase(alias) == toLowerCase(verb) {
                             return v.Name, nil
                         }
                     }

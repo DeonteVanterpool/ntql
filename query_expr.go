@@ -33,13 +33,13 @@ const (
     OperatorEq  Operator = "equals"
     OperatorNeq Operator = "notEquals"
     OperatorGt  Operator = "greaterThan"
-    OperatorLt  Operator = "lessThan"
+    OperatorLT  Operator = "lessThan"
     OperatorGte Operator = "greaterThanOrEquals"
     OperatorLte Operator = "lessThanOrEquals"
 
     // String operators
     OperatorCnt Operator = "contains"
-    OperatorSw  Operator = "startsWith"
+    OperatorSW  Operator = "startsWith"
     OperatorEw  Operator = "endsWith"
 )
 
@@ -59,7 +59,7 @@ func NewOperator(s string) (Operator, error) {
     } else if s == "greaterThan" || s == "after" {
         return OperatorGt, nil
     } else if s == "lessThan" || s == "before" {
-        return OperatorLt, nil
+        return OperatorLT, nil
     } else if s == "greaterthanorequals" {
         return OperatorGte, nil
     } else if s == "lessthanorequals" {
@@ -67,7 +67,7 @@ func NewOperator(s string) (Operator, error) {
     } else if s == "contains" {
         return OperatorCnt, nil
     } else if s == "startswith" {
-        return OperatorSw, nil
+        return OperatorSW, nil
     } else if s == "endsWith" {
         return OperatorEw, nil
     } else {
@@ -158,7 +158,7 @@ func (c *QueryCondition) ToSQL() (string, error) {
 				return "tag_id = (SELECT id FROM atomic_tags WHERE title != '" + c.Value + "')", nil
             case OperatorCnt:
 				return "tag_id = (SELECT id FROM atomic_tags WHERE title LIKE '%" + c.Value + "%')", nil
-            case OperatorSw:
+            case OperatorSW:
 				return "tag_id = (SELECT id FROM atomic_tags WHERE title LIKE '" + c.Value + "%')", nil
             case OperatorEw:
 				return "tag_id = (SELECT id FROM atomic_tags WHERE title LIKE '%" + c.Value + "')", nil
@@ -200,7 +200,7 @@ func (c *QueryCondition) ToSQL() (string, error) {
 			return c.Field + " != '" + c.Value + "'", nil
         case OperatorGt:
 			return c.Field + " > '" + c.Value + "'", nil
-        case OperatorLt:
+        case OperatorLT:
 			return c.Field + " < '" + c.Value + "'", nil
         case OperatorGte:
 			return c.Field + " >= '" + c.Value + "'", nil
@@ -229,7 +229,7 @@ func (c *QueryCondition) ToSQL() (string, error) {
 			return c.Field + " != '" + c.Value + "'", nil
         case OperatorCnt:
 			return c.Field + " LIKE '%" + c.Value + "%'", nil
-        case OperatorSw:
+        case OperatorSW:
 			return c.Field + " LIKE '" + c.Value + "%'", nil
         case OperatorEw:
 			return c.Field + " LIKE '%" + c.Value + "'", nil
@@ -248,7 +248,7 @@ func (c *QueryCondition) ToSQL() (string, error) {
 			return c.Field + " != " + c.Value, nil
         case OperatorGt:
 			return c.Field + " > " + c.Value, nil
-        case OperatorLt:
+        case OperatorLT:
 			return c.Field + " < " + c.Value, nil
         case OperatorGte:
 			return c.Field + " >= " + c.Value, nil

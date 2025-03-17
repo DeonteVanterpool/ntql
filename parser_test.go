@@ -59,7 +59,7 @@ func TestParser(t *testing.T) {
 			Right: &QueryCondition{
 				Field:    "due",
 				Value:    "2021-01-01",
-				Operator: OperatorLt,
+				Operator: OperatorLT,
 			},
 		},
 		Right: &QueryBinaryOp{
@@ -67,12 +67,12 @@ func TestParser(t *testing.T) {
 			Left: &QueryCondition{
 				Field:    "title",
 				Value:    "bar",
-				Operator: OperatorSw,
+				Operator: OperatorSW,
 			},
 			Right: &QueryCondition{
 				Field:    "title",
 				Value:    "c\"\\runch",
-				Operator: OperatorSw,
+				Operator: OperatorSW,
 			},
 		},
 	}
@@ -138,7 +138,7 @@ func TestParserOpPrecedenceAnd(t *testing.T) {
 			Right: &QueryCondition{
 				Field:    "due",
 				Value:    "2021-01-01",
-				Operator: OperatorLt,
+				Operator: OperatorLT,
 			},
 		},
 		Right: &QueryBinaryOp{
@@ -146,12 +146,12 @@ func TestParserOpPrecedenceAnd(t *testing.T) {
 			Left: &QueryCondition{
 				Field:    "title",
 				Value:    "bar",
-				Operator: OperatorSw,
+				Operator: OperatorSW,
 			},
 			Right: &QueryCondition{
 				Field:    "title",
 				Value:    "c\"\\runch",
-				Operator: OperatorSw,
+				Operator: OperatorSW,
 			},
 		},
 	}
@@ -184,7 +184,7 @@ func TestParserOpPrecedenceOr(t *testing.T) {
 		{Type: TokenOr, Literal: ""},
 		{Type: TokenIdentifier, Literal: "title"},
 		{Type: TokenDot, Literal: ""},
-		{Type: TokenIdentifier, Literal: "startswith"},
+		{Type: TokenIdentifier, Literal: "startsWith"},
 		{Type: TokenLParen, Literal: ""},
 		{Type: TokenString, Literal: "bar"},
 		{Type: TokenOr, Literal: ""},
@@ -217,7 +217,7 @@ func TestParserOpPrecedenceOr(t *testing.T) {
 			Right: &QueryCondition{
 				Field:    "due",
 				Value:    "2021-01-01",
-				Operator: OperatorLt,
+				Operator: OperatorLT,
 			},
 		},
 		Right: &QueryBinaryOp{
@@ -225,12 +225,12 @@ func TestParserOpPrecedenceOr(t *testing.T) {
 			Left: &QueryCondition{
 				Field:    "title",
 				Value:    "bar",
-				Operator: OperatorSw,
+				Operator: OperatorSW,
 			},
 			Right: &QueryCondition{
 				Field:    "title",
 				Value:    "c\"\\runch",
-				Operator: OperatorSw,
+				Operator: OperatorSW,
 			},
 		},
 	}
@@ -264,7 +264,7 @@ func TestOuterNestedParens(t *testing.T) {
 		{Type: TokenAnd, Literal: ""},
 		{Type: TokenIdentifier, Literal: "title"},
 		{Type: TokenDot, Literal: ""},
-		{Type: TokenIdentifier, Literal: "startswith"},
+		{Type: TokenIdentifier, Literal: "starts_with"},
 		{Type: TokenLParen, Literal: ""},
 		{Type: TokenString, Literal: "bar"},
 		{Type: TokenOr, Literal: ""},
@@ -298,19 +298,19 @@ func TestOuterNestedParens(t *testing.T) {
 			Left: &QueryCondition{
 				Field:    "due",
 				Value:    "2021-01-01",
-				Operator: OperatorLt,
+				Operator: OperatorLT,
 			},
 			Right: &QueryBinaryOp{
 				Operator: OperatorOr,
 				Left: &QueryCondition{
 					Field:    "title",
 					Value:    "bar",
-					Operator: OperatorSw,
+					Operator: OperatorSW,
 				},
 				Right: &QueryCondition{
 					Field:    "title",
 					Value:    "c\"\\runch",
-					Operator: OperatorSw,
+					Operator: OperatorSW,
 				},
 			},
 		},
@@ -345,7 +345,7 @@ func TestInnerNestedParens(t *testing.T) {
 		{Type: TokenAnd, Literal: ""},
 		{Type: TokenIdentifier, Literal: "title"},
 		{Type: TokenDot, Literal: ""},
-		{Type: TokenIdentifier, Literal: "startswith"},
+		{Type: TokenIdentifier, Literal: "starts_With"},
 		{Type: TokenLParen, Literal: ""},
 		{Type: TokenLParen, Literal: ""},
 		{Type: TokenString, Literal: "bar"},
@@ -382,7 +382,7 @@ func TestInnerNestedParens(t *testing.T) {
 			Left: &QueryCondition{
 				Field:    "due",
 				Value:    "2021-01-01",
-				Operator: OperatorLt,
+				Operator: OperatorLT,
 			},
 			Right: &QueryBinaryOp{
 				Operator: OperatorAnd,
@@ -391,18 +391,18 @@ func TestInnerNestedParens(t *testing.T) {
 					Left: &QueryCondition{
 						Field:    "title",
 						Value:    "bar",
-						Operator: OperatorSw,
+						Operator: OperatorSW,
 					},
 					Right: &QueryCondition{
 						Field:    "title",
 						Value:    "c\"\\runch",
-						Operator: OperatorSw,
+						Operator: OperatorSW,
 					},
 				},
 				Right: &QueryCondition{
 					Field:    "title",
 					Value:    "foo",
-					Operator: OperatorSw,
+					Operator: OperatorSW,
 				},
 			},
 		},
