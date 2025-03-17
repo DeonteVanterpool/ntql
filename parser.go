@@ -136,6 +136,21 @@ func (e *ParserError) Error() string {
 }
 
 // TODO: Sanitize input
+// BNF Grammar:
+// query = expr
+// expr = or_expr
+// or_expr = and_expr ("OR" and_expr)*
+// and_expr = not_expr ("AND" not_expr)*
+// not_expr = ["!"] term
+// term = func_call | "(" expr ")"
+// func_call = subject "." verb "(" value_expr ")" # subject from list of subjects, verb from subject verbs
+// value_expr = value_or 
+// value_or = value_and ("OR" value_and)*
+// value_and = value_not ("AND" value_not)*
+// value_not = ["!"] value_term
+// value_term = "(" value_expr ")" | value
+// value = object # type belonging to current verb
+// object = NUMBER | STRING | DATE | TAG
 type Parser struct {
 	Tokens []Token
 	Pos    int
@@ -429,21 +444,14 @@ func (p *Parser) ValueAnd() (ValueExpr, error) {
 }
 
 func (p *Parser) ValueNot() (ValueExpr, error) {
-	if p.match(TokenLParen) {
-		valueExpr, err := p.ValueExpr()
-		if err != nil {
-			return nil, err
-		}
-		if !p.match(TokenRParen) {
-			return nil, p.NewParserError(InvalidInput, "Expected closing parenthesis")
-		}
-		return valueExpr, nil
-	} else {
-		value, err := p.ValueTerm()
-		if err != nil {
-			return nil, err
-		}
-		return value, nil
+    if p.match(TokenBang) {
+        valueTerm, err := p.ValueTerm()
+        if err != nil {
+            return nil, err
+        }
+        return &ValueUnaryOp{Operator: "NOT", Operand: valueTerm}, nil
+    } else {
+		return p.ValueTerm()
 	}
 }
 
