@@ -1,6 +1,22 @@
 package tbql
 
+import "fmt"
+
 type Lexeme string
+
+type ScannerError struct {
+    Pos int
+    Message string
+    Code ErrorCode
+}
+
+func (e *ScannerError) Error() string {
+    return fmt.Sprintf("Error at position %d: %s", e.Pos, e.Message)
+}
+
+func (s *Scanner) NewScannerError(code ErrorCode, message string) *ScannerError {
+    return &ScannerError{Message: message, Code: code, Pos: s.Pos}
+}
 
 type Scanner struct {
     Lexemes []Lexeme
@@ -15,7 +31,7 @@ func NewScanner(s string) *Scanner {
 func (s *Scanner) ScanLexeme() (Lexeme, error) {
 
     if s.atEnd() {
-        return "", NewTokenizationError(EndOfInput, s.Pos, "Reached end of input")
+        return "", s.NewScannerError(EndOfInput, "Reached end of input")
     }
 
     if s.matchSymbol() {
@@ -28,7 +44,7 @@ func (s *Scanner) ScanLexeme() (Lexeme, error) {
     } else if s.matchAlphaNum() {
         return s.consumeAlphaNum(), nil
     } else {
-        return "", NewTokenizationError(InvalidInput, s.Pos, "Invalid input")
+        return "", s.NewScannerError(InvalidInput, "Invalid input")
     }
 }
 
@@ -123,7 +139,7 @@ func isSymbol(c byte) bool {
 
 func (s *Scanner) previousLexeme() (Lexeme, error) {
     if len(s.Lexemes) == 0 {
-        return "", NewTokenizationError(EndOfInput, s.Pos, "No tokens")
+        return "", s.NewScannerError(EndOfInput, "No tokens")
     }
 
     return s.Lexemes[len(s.Lexemes)-1], nil
@@ -135,7 +151,7 @@ func (s *Scanner) atEnd() bool {
 
 func (s *Scanner) advance() (byte, error) {
     if s.atEnd() {
-        return '\x00', NewTokenizationError(EndOfInput, s.Pos, "Reached end of input")
+        return '\x00', s.NewScannerError(EndOfInput, "Reached end of input")
     }
     s.Pos += 1
     return s.S[s.Pos-1], nil
@@ -166,7 +182,7 @@ func (s *Scanner) appendLexeme(l string) string {
 
 func (s *Scanner) current() (byte, error) {
     if s.atEnd() {
-        return '\x00', NewTokenizationError(EndOfInput, s.Pos, "No tokens")
+        return '\x00', s.NewScannerError(EndOfInput, "No tokens")
     }
 
     return s.S[s.Pos-1], nil
@@ -174,7 +190,7 @@ func (s *Scanner) current() (byte, error) {
 
 func (s *Scanner) LastLexeme() (Lexeme, error) {
     if len(s.Lexemes) == 0 {
-        return "", NewTokenizationError(EndOfInput, s.Pos, "No tokens")
+        return "", s.NewScannerError(EndOfInput, "No tokens")
     }
 
     return s.Lexemes[len(s.Lexemes)-1], nil

@@ -6,6 +6,11 @@ var alphaRegexp = regexp.MustCompile("^[a-zA-Z]$")
 var alphaNumRegexp = regexp.MustCompile("^[a-zA-Z0-9]$")
 var numRegexp = regexp.MustCompile("^[0-9]$")
 var dateRegexp = regexp.MustCompile("^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
+var dateTimeRegexp = regexp.MustCompile("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$")
+var stringRegexp = regexp.MustCompile("^\".*\"$")
+
+var objectTypes = []TokenType{TokenNumber, TokenString, TokenBool, TokenDate, TokenDateTime, TokenTag}
+
 
 var keywords = []string{"AND", "OR", "NOT"}
 

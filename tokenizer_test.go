@@ -15,28 +15,29 @@ func TestTokenizer(t *testing.T) {
 
     // ["!" "Identifier: tag" "." "Identifier: equals" "(" "Identifier: hello" ")" "AND" "Identifier: date" "." "Identifier: before" "(" "Date: 2021-01-01" "AND" "Identifier: title" "." "Identifier: startswith" "(" "String: bar" "OR" "String: crunch" ")"]
     expected := []Token{
-        {Type: TokenBang, Literal: ""},
-        {Type: TokenIdentifier, Literal: "tag"},
-        {Type: TokenDot, Literal: ""},
-        {Type: TokenIdentifier, Literal: "equals"},
-        {Type: TokenLParen, Literal: ""},
-        {Type: TokenIdentifier, Literal: "hello"},
-        {Type: TokenRParen, Literal: ""},
-        {Type: TokenAnd, Literal: ""},
-        {Type: TokenIdentifier, Literal: "date"},
-        {Type: TokenDot, Literal: ""},
-        {Type: TokenIdentifier, Literal: "before"},
-        {Type: TokenLParen, Literal: ""},
-        {Type: TokenDate, Literal: "2021-01-01"},
-        {Type: TokenAnd, Literal: ""},
-        {Type: TokenIdentifier, Literal: "title"},
-        {Type: TokenDot, Literal: ""},
-        {Type: TokenIdentifier, Literal: "startswith"},
-        {Type: TokenLParen, Literal: ""},
-        {Type: TokenString, Literal: "bar"},
-        {Type: TokenOr, Literal: ""},
-        {Type: TokenString, Literal: "c\"\\runch"},
-        {Type: TokenRParen, Literal: ""},
+        {Kind: TokenBang, Literal: "!"},
+        {Kind: TokenSubject, Literal: "tag"},
+        {Kind: TokenDot, Literal: "."},
+        {Kind: TokenVerb, Literal: "equals"},
+        {Kind: TokenLParen, Literal: "("},
+        {Kind: TokenTag, Literal: "hello"},
+        {Kind: TokenRParen, Literal: ")"},
+        {Kind: TokenAnd, Literal: "AND"},
+        {Kind: TokenSubject, Literal: "date"},
+        {Kind: TokenDot, Literal: "."},
+        {Kind: TokenVerb, Literal: "before"},
+        {Kind: TokenLParen, Literal: "("},
+        {Kind: TokenDate, Literal: "2021-01-01"},
+        {Kind: TokenRParen, Literal: ")"},
+        {Kind: TokenAnd, Literal: "AND"},
+        {Kind: TokenSubject, Literal: "title"},
+        {Kind: TokenDot, Literal: "."},
+        {Kind: TokenVerb, Literal: "startswith"},
+        {Kind: TokenLParen, Literal: "("},
+        {Kind: TokenString, Literal: "bar"},
+        {Kind: TokenOr, Literal: "OR"},
+        {Kind: TokenString, Literal: "c\"\\runch"},
+        {Kind: TokenRParen, Literal: ")"},
     }
 
     if len(tokens) != len(expected) {
@@ -44,8 +45,8 @@ func TestTokenizer(t *testing.T) {
     }
 
     for i, tok := range tokens {
-        if tok.Type != expected[i].Type {
-            t.Errorf("Expected token type %s, got %s", expected[i].Type, tok.Type)
+        if tok.Kind != expected[i].Kind {
+            t.Errorf("Expected token type %s, got %s", expected[i].Kind, tok.Kind)
         }
         if tok.Literal != expected[i].Literal {
             t.Errorf("Expected token literal %s, got %s", expected[i].Literal, tok.Literal)

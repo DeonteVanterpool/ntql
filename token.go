@@ -3,7 +3,26 @@ package tbql
 import "fmt"
 
 type TokenType int
+const (
+    TokenSubject TokenType = iota
+    TokenBang
+    TokenVerb
+    TokenString
+    TokenTag
+    TokenDate
+    TokenDateTime
+    TokenNumber
+    TokenBool
+    TokenDot
+    TokenLParen
+    TokenRParen
+    TokenAnd
+    TokenOr
+)
 
+// type TokenType int
+
+/*
 const (
 	// Single-character tokens
 	TokenBang TokenType = iota
@@ -24,6 +43,7 @@ const (
 	TokenAnd
 	TokenOr
 )
+*/
 
 func (t TokenType) String() string {
 	switch t {
@@ -31,14 +51,18 @@ func (t TokenType) String() string {
 		return "!"
 	case TokenDot:
 		return "."
-	case TokenColon:
-		return ":"
 	case TokenLParen:
 		return "("
 	case TokenRParen:
 		return ")"
-	case TokenIdentifier:
-		return "Identifier"
+    case TokenSubject:
+        return "Subject"
+    case TokenTag:
+        return "Tag"
+    case TokenVerb:
+        return "Verb"
+    case TokenBool:
+        return "Bool"
 	case TokenString:
 		return "String"
 	case TokenNumber:
@@ -56,19 +80,19 @@ func (t TokenType) String() string {
 // Example: tag.equals(hello OR goodbye)
 // date.before(2024-01-08) AND date.after(2024-01-09)
 type Token struct {
-	Type    TokenType
+	Kind    TokenType
 	Literal string
 }
 
 func createToken(literal string, token TokenType) Token {
-	return Token{Type: token, Literal: literal}
+	return Token{Kind: token, Literal: literal}
 }
 
 func (t Token) String() string {
 	if t.Literal == "" {
-		return fmt.Sprintf("\"%s\"", t.Type)
+		return fmt.Sprintf("\"%s\"", t.Kind)
 	} else {
-        return fmt.Sprintf("\"%s: %s\"", t.Type, t.Literal)
+        return fmt.Sprintf("\"%s: %s\"", t.Kind, t.Literal)
 
 	}
 }

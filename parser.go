@@ -215,7 +215,7 @@ func (p *Parser) match(t TokenType) bool {
 	if p.Pos >= len(p.Tokens) {
 		return false
 	}
-	if p.Tokens[p.Pos].Type != t {
+	if p.Tokens[p.Pos].Kind != t {
 		return false
 	}
 	p.advance()
