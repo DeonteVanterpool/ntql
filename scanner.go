@@ -5,194 +5,199 @@ import "fmt"
 type Lexeme string
 
 type ScannerError struct {
-    Pos int
-    Message string
-    Code ErrorCode
+	Message error
 }
 
 func (e *ScannerError) Error() string {
-    return fmt.Sprintf("Error at position %d: %s", e.Pos, e.Message)
-}
-
-func (s *Scanner) NewScannerError(code ErrorCode, message string) *ScannerError {
-    return &ScannerError{Message: message, Code: code, Pos: s.Pos}
+	return fmt.Sprintf("Scanner Error: %s", e.Message.Error())
 }
 
 type Scanner struct {
-    Lexemes []Lexeme
-    Pos     int
-    S       string
+	Lexemes []Lexeme
+	Pos     int
+	S       string
 }
 
 func NewScanner(s string) *Scanner {
-    return &Scanner{Lexemes: []Lexeme{}, S: s, Pos: 0}
+	return &Scanner{Lexemes: []Lexeme{}, S: s, Pos: 0}
 }
 
 func (s *Scanner) ScanLexeme() (Lexeme, error) {
 
-    if s.atEnd() {
-        return "", s.NewScannerError(EndOfInput, "Reached end of input")
-    }
+	if s.atEnd() {
+		return "", ErrEndOfInput{}
+	}
 
-    if s.matchSymbol() {
-        return s.consumeSymbol(), nil
-    } else if s.matchQuote() {
-        return s.consumeQuote(), nil
-    } else if s.matchWhitespace() {
+	if s.matchSymbol() {
+		return s.consumeSymbol(), nil
+	} else if s.matchQuote() {
+		return s.consumeQuote(), nil
+	} else if s.matchWhitespace() {
 		s.skipWhitespace()
-        return s.ScanLexeme()
-    } else if s.matchAlphaNum() {
-        return s.consumeAlphaNum(), nil
-    } else {
-        return "", s.NewScannerError(InvalidInput, "Invalid input")
-    }
+		return s.ScanLexeme()
+	} else if s.matchAlphaNum() {
+		return s.consumeAlphaNum(), nil
+	} else {
+		return "", ErrInvalidCharacter{Input: s.S[s.Pos]}
+	}
 }
 
 func (s *Scanner) matchSymbol() bool {
-    c, _ := s.current()
+	c, _ := s.current()
 
-    return isSymbol(c)
+	return isSymbol(c)
 }
 
 func (s *Scanner) consumeSymbol() Lexeme {
+	c, err := s.advance()
+	if err != nil {
+		panic(err)
+	}
+
+	return Lexeme(s.appendLexeme(string(c)))
+}
+
+func (s *Scanner) matchQuote() bool {
+	c, err := s.current()
+	if err != nil {
+		panic(err)
+	}
+
+	return c == '"'
+}
+
+func (s *Scanner) consumeQuote() Lexeme {
+    var l string
+	escaped := false
+
     c, err := s.advance()
     if err != nil {
         panic(err)
     }
 
-    return Lexeme(s.appendLexeme(string(c)))
-}
+    l += string(c)
 
-func (s *Scanner) matchQuote() bool {
-    c, err := s.current()
-    if err != nil {
-        panic(err)
-    }
+	for !s.atEnd() {
+		c, err := s.advance()
+		if err != nil {
+			panic(err)
+		}
 
-    return c == '"'
-}
+		if c == '\\' && !escaped {
+			escaped = true
+			continue // skip adding this backslash character
+		}
 
-func (s *Scanner) consumeQuote() Lexeme {
-    var l string
-    escaped := false
-    
-    for !s.atEnd() {
-        c, err := s.advance()
-        if err != nil {
-            panic(err)
-        }
+		if c == '"' && !escaped {
+            l += string(c)
+			break
+		}
 
-        if c == '\\' && !escaped {
-            escaped = true
-            continue // skip adding this backslash character
-        }
+		escaped = false
 
-        if c == '"' && !escaped {
-            break
-        }
+		l += string(c)
+	}
 
-        escaped = false
-
-        l += string(c)
-    }
-
-    return Lexeme(s.appendLexeme(l))
+	return Lexeme(s.appendLexeme(l))
 }
 
 func (s *Scanner) matchWhitespace() bool {
-    c, err := s.current()
+	c, err := s.current()
 
-    if err != nil {
-        panic(err)
-    }
+	if err != nil {
+		panic(err)
+	}
 
-    return c == ' '
+	return c == ' '
 }
 
 func (s *Scanner) skipWhitespace() error {
-    for !s.atEnd() {
-        if !s.matchWhitespace() {
-            break
-        }
+	for !s.atEnd() {
+		if !s.matchWhitespace() {
+			break
+		}
 
-        _, err := s.advance()
-        if err != nil {
-            return err
-        }
-    }
+		_, err := s.advance()
+		if err != nil {
+			return err
+		}
+	}
 
-    return nil
+	return nil
 }
 
 func (s *Scanner) matchAlphaNum() bool {
-    c, err := s.current()
-    if err != nil {
-        panic(err)
-    }
+	c, err := s.current()
+	if err != nil {
+		panic(err)
+	}
 
-    return isAlphaNum(c)
+	return isAlphaNum(c)
 }
 
 func isSymbol(c byte) bool {
-    return c == '!' || c == '(' || c == ')' || c == '.'
+	return c == '!' || c == '(' || c == ')' || c == '.'
 }
 
 func (s *Scanner) previousLexeme() (Lexeme, error) {
-    if len(s.Lexemes) == 0 {
-        return "", s.NewScannerError(EndOfInput, "No tokens")
-    }
+	if len(s.Lexemes) == 0 {
+		return "", ErrEndOfInput{}
+	}
 
-    return s.Lexemes[len(s.Lexemes)-1], nil
+	return s.Lexemes[len(s.Lexemes)-1], nil
 }
 
 func (s *Scanner) atEnd() bool {
-    return s.Pos >= len(s.S)
+	return s.Pos >= len(s.S)
 }
 
 func (s *Scanner) advance() (byte, error) {
-    if s.atEnd() {
-        return '\x00', s.NewScannerError(EndOfInput, "Reached end of input")
-    }
-    s.Pos += 1
-    return s.S[s.Pos-1], nil
+	if s.atEnd() {
+		return '\x00', ErrEndOfInput{}
+	}
+	s.Pos += 1
+	return s.S[s.Pos-1], nil
 }
 
 func (s *Scanner) consumeAlphaNum() Lexeme {
-    var l string
+	var l string
 
-    for !s.atEnd() {
-        if s.matchWhitespace() || s.matchSymbol() {
-            break
-        }
+	for !s.atEnd() {
+		if s.matchWhitespace() || s.matchSymbol() {
+			break
+		}
 
-        c, err := s.advance()
-        if err != nil {
-            panic(err)
-        }
-        l += string(c)
-    }
+		c, err := s.advance()
+		if err != nil {
+			panic(err)
+		}
+		l += string(c)
+	}
 
-    return Lexeme(s.appendLexeme(l))
+	return Lexeme(s.appendLexeme(l))
 }
 
 func (s *Scanner) appendLexeme(l string) string {
-    s.Lexemes = append(s.Lexemes, Lexeme(l))
-    return l
+	s.Lexemes = append(s.Lexemes, Lexeme(l))
+	return l
 }
 
 func (s *Scanner) current() (byte, error) {
-    if s.atEnd() {
-        return '\x00', s.NewScannerError(EndOfInput, "No tokens")
-    }
+	if s.atEnd() {
+		return '\x00', ErrEndOfInput{}
+	}
 
-    return s.S[s.Pos-1], nil
+	return s.S[s.Pos], nil
 }
 
 func (s *Scanner) LastLexeme() (Lexeme, error) {
-    if len(s.Lexemes) == 0 {
-        return "", s.NewScannerError(EndOfInput, "No tokens")
-    }
+	if len(s.Lexemes) == 0 {
+		return "", ErrEndOfInput{}
+	}
 
-    return s.Lexemes[len(s.Lexemes)-1], nil
+	return s.Lexemes[len(s.Lexemes)-1], nil
 }
 
+func (s *Scanner) GetPosition() int {
+	return s.Pos
+}
