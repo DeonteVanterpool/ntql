@@ -27,15 +27,6 @@ const (
 	ObjectTypeTag
 )
 
-type Lexer struct {
-    tokens []Token
-    pos int
-    s string
-    expected []TokenType
-    innerParens int
-    lastTokenPartial bool
-}
-
 type MegaTrie struct {
 	subjectTrie *trie.Trie
 }
@@ -64,7 +55,7 @@ type CompletionEngine struct {
 
 	verbTrie *trie.Trie
 
-    tokenizer *Tokenizer
+    tokenizer *Lexer
 
 	dtypes []ObjectType
 }
@@ -90,18 +81,6 @@ func (e *CompletionEngine) Suggest(s string) ([]string, error) {
     // object: inside function call's parentheses, and previous token either a connector or LPAREN
     // string: inside function call's parentheses, and previous token either a connector or LPAREN
     // scan until rest of string has no dot, LPAREN, or space
-}
-
-func (l *Lexer) AppendToken() {
-    e.tokens = append(e.tokens, "")
-}
-
-func (l *Lexer) AppendToToken(c byte) {
-    e.tokens[len(e.tokens)-1] += string(c)
-}
-
-func (l *Lexer) ExpectToken(t LexerTokenType) (string, error) {
-
 }
 
 func (e *CompletionEngine) buildVerbTrie(subject Subject) *trie.Trie {
