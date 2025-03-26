@@ -55,3 +55,35 @@ func TestLexer(t *testing.T) {
     }
 }
 
+func TestLexerLastTokenComplete(t *testing.T) {
+    lexer := NewLexer(`!tag.equals(hello) AND date.before(2021-01-01) AND title.startswith("bar" OR "c\"\\runch")`)
+    _, err := lexer.Tokenize()
+    if err != nil {
+        t.Errorf("Error: %s", err.Error())
+    }
+
+    complete, err := lexer.LastTokenComplete()
+    if err != nil {
+        t.Errorf("Error: %s", err.Error())
+    }
+    if !complete {
+        t.Errorf("Expected last token to be complete")
+    }
+}
+
+func TestLexerLastTokenIncomplete(t *testing.T) {
+    lexer := NewLexer(`!tag.equals(hello) AND date.before(2021-01-01) AND title.startswith("bar" OR "c\"\\run`)
+    _, err := lexer.Tokenize()
+    if err != nil {
+        t.Errorf("Error: %s", err.Error())
+    }
+
+    complete, err := lexer.LastTokenComplete()
+    if err != nil {
+        t.Errorf("Error: %s", err.Error())
+    }
+    if complete {
+        t.Errorf("Expected last token to be incomplete")
+    }
+}
+

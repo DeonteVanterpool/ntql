@@ -23,7 +23,7 @@ func TestScanLexeme(t *testing.T) {
 func TestScanString(t *testing.T) {
 	s := NewScanner(`"hello" OR "goodbye"`)
 
-	expected := []Lexeme{"hello", "OR", "goodbye"}
+	expected := []Lexeme{"\"hello\"", "OR", "\"goodbye\""}
 
 	for _, e := range expected {
 		v, err := s.ScanLexeme()
