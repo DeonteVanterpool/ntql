@@ -4,6 +4,7 @@ import (
 	"testing"
 )
 
+// TODO: Test positions of tokens
 func TestTokenizer(t *testing.T) {
     Tokenizer := NewTokenizer(`!tag.equals(hello) AND date.before(2021-01-01) AND title.startswith("bar" OR "c\"\\runch")`)
 	tokens, err := Tokenizer.Tokenize()

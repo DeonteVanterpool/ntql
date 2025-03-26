@@ -1,5 +1,6 @@
 package tbql
 
+/*
 import (
 	"regexp"
 
@@ -254,4 +255,5 @@ func (e *CompletionEngine) String() ([]string, error) {
 func (e *CompletionEngine) Tag() ([]string, error) {
 
 }
+*/
 
