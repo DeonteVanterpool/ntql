@@ -6,7 +6,7 @@ import (
 
 // TODO: Test positions of tokens
 func TestLexer(t *testing.T) {
-    lexer := NewTokenizer(`!tag.equals(hello) AND date.before(2021-01-01) AND title.startswith("bar" OR "c\"\\runch")`)
+    lexer := NewLexer(`!tag.equals(hello) AND date.before(2021-01-01) AND title.startswith("bar" OR "c\"\\runch")`)
 	tokens, err := lexer.Tokenize()
 	if err != nil {
 		t.Errorf("Error: %s", err.Error())

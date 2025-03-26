@@ -59,7 +59,7 @@ func (e ErrEndOfInput) Error() string {
 	return fmt.Sprintf("End of input")
 }
 
-func NewTokenizer(s string) *Lexer {
+func NewLexer(s string) *Lexer {
 	return &Lexer{Tokens: []Token{}, Scanner: NewScanner(s), InnerDepth: 0, ExpectedTokens: []TokenType{TokenLParen, TokenBang, TokenSubject}}
 }
 
