@@ -36,27 +36,6 @@ type Lexer struct {
     lastTokenPartial bool
 }
 
-func (l *Lexer) ConsumeSubject() (*Token, error) {
-    l.appendToken(TokenSubject)
-    if l.peek() == '.' {
-        return nil, NewTokenizationError
-    }
-    for !l.atEnd() {
-        c, err := l.advance()
-        if err != nil {
-            return nil, err
-        }
-        l.AppendToToken(c)
-        if l.peek() == '.' {
-            return l.lastToken(), nil
-        }
-    }
-
-    l.lastTokenPartial = true
-
-    return l.lastToken(), nil
-}
-
 type MegaTrie struct {
 	subjectTrie *trie.Trie
 }

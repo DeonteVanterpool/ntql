@@ -22,29 +22,6 @@ const (
 
 // type TokenType int
 
-/*
-const (
-	// Single-character tokens
-	TokenBang TokenType = iota
-	TokenDot
-	TokenColon
-
-    // Grouping
-	TokenLParen
-	TokenRParen
-
-	// Literals
-	TokenIdentifier
-	TokenString
-	TokenNumber
-	TokenDate
-
-	// Operators
-	TokenAnd
-	TokenOr
-)
-*/
-
 func (t TokenType) String() string {
 	switch t {
 	case TokenBang:
