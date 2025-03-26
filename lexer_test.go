@@ -7,7 +7,7 @@ import (
 // TODO: Test positions of tokens
 func TestLexer(t *testing.T) {
     lexer := NewLexer(`!tag.equals(hello) AND date.before(2021-01-01) AND title.startswith("bar" OR "c\"\\runch")`)
-	tokens, err := lexer.Tokenize()
+	tokens, err := lexer.Lex()
 	if err != nil {
 		t.Errorf("Error: %s", err.Error())
 	}
@@ -57,7 +57,7 @@ func TestLexer(t *testing.T) {
 
 func TestLexerLastTokenComplete(t *testing.T) {
     lexer := NewLexer(`!tag.equals(hello) AND date.before(2021-01-01) AND title.startswith("bar" OR "c\"\\runch")`)
-    _, err := lexer.Tokenize()
+    _, err := lexer.Lex()
     if err != nil {
         t.Errorf("Error: %s", err.Error())
     }
@@ -73,7 +73,7 @@ func TestLexerLastTokenComplete(t *testing.T) {
 
 func TestLexerLastTokenIncomplete(t *testing.T) {
     lexer := NewLexer(`!tag.equals(hello) AND date.before(2021-01-01) AND title.startswith("bar" OR "c\"\\run`)
-    _, err := lexer.Tokenize()
+    _, err := lexer.Lex()
     if err != nil {
         t.Errorf("Error: %s", err.Error())
     }

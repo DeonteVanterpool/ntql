@@ -63,10 +63,10 @@ func NewLexer(s string) *Lexer {
 	return &Lexer{Tokens: []Token{}, Scanner: NewScanner(s), InnerDepth: 0, ExpectedTokens: []TokenType{TokenLParen, TokenBang, TokenSubject}}
 }
 
-// Tokenize takes a string and returns a slice of tokens
+// Lex takes a string and returns a slice of tokens
 // Example: tag.equals(hello OR goodbye) OR (date.before(2024-01-08) AND date.after(2024-01-09))
 // tag.equals(hello) AND date.before(2021-01-01) AND title.startswith(("bar" OR "c\"\\runch") AND "foo")
-func (t *Lexer) Tokenize() ([]Token, error) {
+func (t *Lexer) Lex() ([]Token, error) {
 	for {
 		if t.atEnd() {
 			break
