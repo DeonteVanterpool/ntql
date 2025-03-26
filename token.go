@@ -82,10 +82,11 @@ func (t TokenType) String() string {
 type Token struct {
 	Kind    TokenType
 	Literal string
+    Position int
 }
 
-func createToken(literal string, token TokenType) Token {
-	return Token{Kind: token, Literal: literal}
+func createToken(literal string, token TokenType, position int) Token {
+    return Token{Kind: token, Literal: literal, Position: position}
 }
 
 func (t Token) String() string {

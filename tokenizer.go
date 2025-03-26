@@ -23,7 +23,7 @@ func newTokenizationError(message error, position int) TokenizationError {
 }
 
 func (e TokenizationError) Error() string {
-	return fmt.Sprintf("Error: %s at position %d", e.Message.Error(), e.Position)
+    return fmt.Sprintf("Tokenization Error at Position %d: %s", e.Position, e.Message.Error())
 }
 
 type ErrEndOfInput struct{}
@@ -386,7 +386,7 @@ func (t *Tokenizer) GetPosition() int {
 }
 
 func (t *Tokenizer) appendToken(kind TokenType, lexeme Lexeme) error {
-	t.Tokens = append(t.Tokens, createToken(string(lexeme), kind))
+	t.Tokens = append(t.Tokens, createToken(string(lexeme), kind, t.GetPosition()))
 	return nil
 }
 
