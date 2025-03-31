@@ -46,6 +46,7 @@ func (e ErrInvalidToken) Error() string {
 			expected = fmt.Sprintf("%s, %s", expected, t.String())
 		}
 	}
+
 	return fmt.Sprintf("Invalid type: expected type from [%s]", expected)
 }
 

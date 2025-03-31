@@ -51,3 +51,4 @@ func TestScanEscapedString(t *testing.T) {
 		}
 	}
 }
+
