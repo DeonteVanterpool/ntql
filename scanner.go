@@ -28,6 +28,18 @@ func (s *Scanner) ScanLexeme() (Lexeme, error) {
 		return "", ErrEndOfInput{}
 	}
 
+    l, err := s.matchSymbols()
+
+    if err != nil {
+        return "", err
+    }
+
+    s.skipWhitespace()
+
+    return l, nil
+}
+
+func (s *Scanner) matchSymbols() (Lexeme, error) {
 	if s.matchSymbol() {
 		return s.consumeSymbol(), nil
 	} else if s.matchQuote() {
@@ -139,14 +151,6 @@ func isSymbol(c byte) bool {
 	return c == '!' || c == '(' || c == ')' || c == '.'
 }
 
-func (s *Scanner) previousLexeme() (Lexeme, error) {
-	if len(s.Lexemes) == 0 {
-		return "", ErrEndOfInput{}
-	}
-
-	return s.Lexemes[len(s.Lexemes)-1], nil
-}
-
 func (s *Scanner) atEnd() bool {
 	return s.Pos >= len(s.S)
 }
@@ -196,6 +200,10 @@ func (s *Scanner) LastLexeme() (Lexeme, error) {
 	}
 
 	return s.Lexemes[len(s.Lexemes)-1], nil
+}
+
+func (s *Scanner) HasNext() bool {
+    return s.atEnd()
 }
 
 func (s *Scanner) GetPosition() int {

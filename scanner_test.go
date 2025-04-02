@@ -5,7 +5,7 @@ import (
 )
 
 func TestScanLexeme(t *testing.T) {
-	s := NewScanner("tag.equals(hello OR goodbye) OR (date.before(2024-01-08) AND date.after(2024-01-09))")
+	s := NewScanner("tag.equals(hello OR goodbye) OR (date.before(2024-01-08) AND date.after(2024-01-09)) ")
 
 	expected := []Lexeme{"tag", ".", "equals", "(", "hello", "OR", "goodbye", ")", "OR", "(", "date", ".", "before", "(", "2024-01-08", ")", "AND", "date", ".", "after", "(", "2024-01-09", ")", ")"}
 
@@ -21,7 +21,7 @@ func TestScanLexeme(t *testing.T) {
 }
 
 func TestScanString(t *testing.T) {
-	s := NewScanner(`"hello" OR "goodbye"`)
+	s := NewScanner(`"hello" OR "goodbye" `)
 
 	expected := []Lexeme{"\"hello\"", "OR", "\"goodbye\""}
 
@@ -37,7 +37,7 @@ func TestScanString(t *testing.T) {
 }
 
 func TestScanEscapedString(t *testing.T) {
-	s := NewScanner(`"hello \"world\"" OR "good\"bye"`)
+	s := NewScanner(`"hello \"world\"" OR "good\"bye" `)
 
 	expected := []Lexeme{"\"hello \"world\"\"", "OR", "\"good\"bye\""}
 

@@ -53,6 +53,7 @@ func (e *CompletionEngine) Suggest(s string) ([]string, error) {
 
 	e.lexer = NewLexer(s)
 
+    // at each space, we must suggest something else. at each dot, we must suggest a verb. at each open paren, we must suggest an object. at each close paren, we must suggest a connector. if outside of a method call, suggest a subject. if inside of a method call, suggest an object. Skip strings
 	_, err := e.lexer.Lex()
 	if err != nil {
 		switch err.(type) {
