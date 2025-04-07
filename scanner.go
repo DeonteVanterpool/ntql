@@ -1,4 +1,4 @@
-package tbql
+package ntql
 
 import "fmt"
 
@@ -28,15 +28,15 @@ func (s *Scanner) ScanLexeme() (Lexeme, error) {
 		return "", ErrEndOfInput{}
 	}
 
-    l, err := s.matchSymbols()
+	l, err := s.matchSymbols()
 
-    if err != nil {
-        return "", err
-    }
+	if err != nil {
+		return "", err
+	}
 
-    s.skipWhitespace()
+	s.skipWhitespace()
 
-    return l, nil
+	return l, nil
 }
 
 func (s *Scanner) matchSymbols() (Lexeme, error) {
@@ -79,15 +79,15 @@ func (s *Scanner) matchQuote() bool {
 }
 
 func (s *Scanner) consumeQuote() Lexeme {
-    var l string
+	var l string
 	escaped := false
 
-    c, err := s.advance()
-    if err != nil {
-        panic(err)
-    }
+	c, err := s.advance()
+	if err != nil {
+		panic(err)
+	}
 
-    l += string(c)
+	l += string(c)
 
 	for !s.atEnd() {
 		c, err := s.advance()
@@ -101,7 +101,7 @@ func (s *Scanner) consumeQuote() Lexeme {
 		}
 
 		if c == '"' && !escaped {
-            l += string(c)
+			l += string(c)
 			break
 		}
 
@@ -203,7 +203,7 @@ func (s *Scanner) LastLexeme() (Lexeme, error) {
 }
 
 func (s *Scanner) HasNext() bool {
-    return s.atEnd()
+	return s.atEnd()
 }
 
 func (s *Scanner) GetPosition() int {

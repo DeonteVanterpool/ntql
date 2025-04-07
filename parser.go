@@ -1,4 +1,4 @@
-package tbql
+package ntql
 
 import (
 	"fmt"
@@ -9,15 +9,15 @@ import (
 type DType int
 
 type ParserError struct {
-    Message  string
-    Token   Token
+	Message string
+	Token   Token
 }
 
 const (
 	DTypeString DType = iota
 	DTypeInt
 	DTypeDate
-    DTypeIdentifier
+	DTypeIdentifier
 )
 
 type Subject struct {
@@ -120,18 +120,18 @@ var validSubjects = []Subject{
 		},
 		ValidTypes: []DType{DTypeString},
 	},
-    {
-        Name: "tag",
-        Aliases: []string{},
-        ValidVerbs: []Verb{
-            {Name: "equals", Aliases: []string{"eq"}},
-        },
-        ValidTypes: []DType{DTypeIdentifier},
-    },
+	{
+		Name:    "tag",
+		Aliases: []string{},
+		ValidVerbs: []Verb{
+			{Name: "equals", Aliases: []string{"eq"}},
+		},
+		ValidTypes: []DType{DTypeIdentifier},
+	},
 }
 
 func (e *ParserError) Error() string {
-    return fmt.Sprintf("Error occurred at position %d: %s", e.Token.Position, e.Message)
+	return fmt.Sprintf("Error occurred at position %d: %s", e.Token.Position, e.Message)
 }
 
 // TODO: Sanitize input
@@ -143,7 +143,7 @@ func (e *ParserError) Error() string {
 // not_expr = ["!"] term
 // term = func_call | "(" expr ")"
 // func_call = subject "." verb "(" value_expr ")" # subject from list of subjects, verb from subject verbs
-// value_expr = value_or 
+// value_expr = value_or
 // value_or = value_and ("OR" value_and)*
 // value_and = value_not ("AND" value_not)*
 // value_not = ["!"] value_term
@@ -151,18 +151,18 @@ func (e *ParserError) Error() string {
 // value = object # type belonging to current verb
 // object = NUMBER | STRING | DATE | TAG
 type Parser struct {
-    Tokens []Token
+	Tokens []Token
 	Pos    int
 }
 
 func (p *Parser) Parse() (QueryExpr, error) {
-    return p.Query()
+	return p.Query()
 }
 
 func NewParserError(message string, t Token) *ParserError {
 	return &ParserError{
-		Message:  message,
-        Token:  t,
+		Message: message,
+		Token:   t,
 	}
 }
 
@@ -346,54 +346,54 @@ func (p *Parser) FunctionCall() (QueryExpr, error) {
 }
 
 func toLowerCase(s string) string {
-    if s == "" {
-        return s
-    }
-    s = strings.ToLower(s)
-    return strings.ReplaceAll(s, "_", "")
+	if s == "" {
+		return s
+	}
+	s = strings.ToLower(s)
+	return strings.ReplaceAll(s, "_", "")
 }
 
 func (p *Parser) Subject() (string, error) {
-    if p.match(TokenSubject) {
-        subject := p.previous().Literal
-        for _, s := range validSubjects {
-            if toLowerCase(s.Name) == toLowerCase(subject) {
-                return s.Name, nil
-            }
-            for _, alias := range s.Aliases {
-                if toLowerCase(alias) == toLowerCase(subject) {
-                    return s.Name, nil
-                }
-            }
-        }
-        return "", NewParserError("Invalid subject: " + subject, p.previous())
-    } else {
-        return "", NewParserError("Expected subject", p.previous())
-    }
+	if p.match(TokenSubject) {
+		subject := p.previous().Literal
+		for _, s := range validSubjects {
+			if toLowerCase(s.Name) == toLowerCase(subject) {
+				return s.Name, nil
+			}
+			for _, alias := range s.Aliases {
+				if toLowerCase(alias) == toLowerCase(subject) {
+					return s.Name, nil
+				}
+			}
+		}
+		return "", NewParserError("Invalid subject: "+subject, p.previous())
+	} else {
+		return "", NewParserError("Expected subject", p.previous())
+	}
 }
 
 func (p *Parser) Verb(subject string) (string, error) {
-    for _, s := range validSubjects {
-        if s.Name == subject {
-            if p.match(TokenVerb) {
-                verb := p.previous().Literal
-                for _, v := range s.ValidVerbs {
-                    if toLowerCase(v.Name) == toLowerCase(verb) {
-                        return v.Name, nil
-                    }
-                    for _, alias := range v.Aliases {
-                        if toLowerCase(alias) == toLowerCase(verb) {
-                            return v.Name, nil
-                        }
-                    }
-                }
-                return "", NewParserError("Invalid verb: " + verb, p.previous())
-            } else {
-                return "", NewParserError("Expected verb", p.previous())
-            }
-        }
-    }
-    return "", NewParserError("Invalid subject: " + subject, p.previous())
+	for _, s := range validSubjects {
+		if s.Name == subject {
+			if p.match(TokenVerb) {
+				verb := p.previous().Literal
+				for _, v := range s.ValidVerbs {
+					if toLowerCase(v.Name) == toLowerCase(verb) {
+						return v.Name, nil
+					}
+					for _, alias := range v.Aliases {
+						if toLowerCase(alias) == toLowerCase(verb) {
+							return v.Name, nil
+						}
+					}
+				}
+				return "", NewParserError("Invalid verb: "+verb, p.previous())
+			} else {
+				return "", NewParserError("Expected verb", p.previous())
+			}
+		}
+	}
+	return "", NewParserError("Invalid subject: "+subject, p.previous())
 }
 
 func (p *Parser) ValueExpr() (ValueExpr, error) {
@@ -441,41 +441,40 @@ func (p *Parser) ValueAnd() (ValueExpr, error) {
 }
 
 func (p *Parser) ValueNot() (ValueExpr, error) {
-    if p.match(TokenBang) {
-        valueTerm, err := p.ValueTerm()
-        if err != nil {
-            return nil, err
-        }
-        return &ValueUnaryOp{Operator: "NOT", Operand: valueTerm}, nil
-    } else {
+	if p.match(TokenBang) {
+		valueTerm, err := p.ValueTerm()
+		if err != nil {
+			return nil, err
+		}
+		return &ValueUnaryOp{Operator: "NOT", Operand: valueTerm}, nil
+	} else {
 		return p.ValueTerm()
 	}
 }
 
 func (p *Parser) ValueTerm() (ValueExpr, error) {
-    if p.match(TokenLParen) {
-        valueExpr, err := p.ValueExpr()
-        if err != nil {
-            return nil, err
-        }
-        if !p.match(TokenRParen) {
-            return nil, NewParserError("Expected closing parenthesis", p.Tokens[p.Pos])
-        }
-        return valueExpr, nil
-    } else {
-        value, err := p.ValueObject()
-        if err != nil {
-            return nil, err
-        }
-        return value, nil
-    }
+	if p.match(TokenLParen) {
+		valueExpr, err := p.ValueExpr()
+		if err != nil {
+			return nil, err
+		}
+		if !p.match(TokenRParen) {
+			return nil, NewParserError("Expected closing parenthesis", p.Tokens[p.Pos])
+		}
+		return valueExpr, nil
+	} else {
+		value, err := p.ValueObject()
+		if err != nil {
+			return nil, err
+		}
+		return value, nil
+	}
 }
 
 func (p *Parser) ValueObject() (ValueExpr, error) {
 	if p.match(TokenString) || p.match(TokenDate) || p.match(TokenTag) || p.match(TokenNumber) {
 		return &Value{Value: p.previous().Literal}, nil
 	} else {
-        return nil, NewParserError("Expected value. Got: " + p.Tokens[p.Pos].Literal, p.Tokens[p.Pos])
+		return nil, NewParserError("Expected value. Got: "+p.Tokens[p.Pos].Literal, p.Tokens[p.Pos])
 	}
 }
-

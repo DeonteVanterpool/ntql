@@ -1,4 +1,4 @@
-package tbql
+package ntql
 
 import (
 	"testing"
@@ -51,4 +51,3 @@ func TestScanEscapedString(t *testing.T) {
 		}
 	}
 }
-

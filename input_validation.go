@@ -1,4 +1,4 @@
-package tbql
+package ntql
 
 import "regexp"
 
@@ -10,7 +10,6 @@ var dateTimeRegexp = regexp.MustCompile("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0
 var stringRegexp = regexp.MustCompile("^\".*\"$")
 
 var objectTypes = []TokenType{TokenNumber, TokenString, TokenBool, TokenDate, TokenDateTime, TokenTag}
-
 
 var keywords = []string{"AND", "OR", "NOT"}
 
@@ -58,5 +57,3 @@ func isOpenParen(c byte) bool {
 func isCloseParen(c byte) bool {
 	return c == ')'
 }
-
-

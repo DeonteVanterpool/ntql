@@ -1,4 +1,4 @@
-package tbql
+package ntql
 
 import (
 	"fmt"
@@ -23,7 +23,7 @@ func newTokenizationError(message error, position int) TokenizationError {
 }
 
 func (e TokenizationError) Error() string {
-    return fmt.Sprintf("Tokenization Error at Position %d: %s", e.Position, e.Message.Error())
+	return fmt.Sprintf("Tokenization Error at Position %d: %s", e.Position, e.Message.Error())
 }
 
 type ErrEndOfInput struct{}

@@ -1,4 +1,4 @@
-package tbql
+package ntql
 
 import (
 	"encoding/json"

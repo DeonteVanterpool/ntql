@@ -1,4 +1,4 @@
-package tbql
+package ntql
 
 import (
 	// "regexp"
@@ -25,7 +25,7 @@ func NewMegaTrie() *MegaTrie {
 	}
 }
 
-// CompletionEngine is a trie-based autocompletion engine for TBQL
+// CompletionEngine is a trie-based autocompletion engine for NTQL
 type CompletionEngine struct {
 	// checks to see if we're in a function call or not
 	innerParens int
@@ -36,7 +36,7 @@ type CompletionEngine struct {
 
 	verbTrie *trie.Trie
 
-	lexer *Lexer
+	scanner *Scanner
 }
 
 func NewAutocompleteEngine(tags []string) *CompletionEngine {
@@ -51,9 +51,9 @@ func (e *CompletionEngine) Suggest(s string) ([]string, error) {
 		// return e.Subject()
 	}
 
-	e.lexer = NewLexer(s)
+	e.scanner = NewScanner(s)
 
-    // at each space, we must suggest something else. at each dot, we must suggest a verb. at each open paren, we must suggest an object. at each close paren, we must suggest a connector. if outside of a method call, suggest a subject. if inside of a method call, suggest an object. Skip strings
+	// at each space, we must suggest something else. at each dot, we must suggest a verb. at each open paren, we must suggest an object. at each close paren, we must suggest a connector. if outside of a method call, suggest a subject. if inside of a method call, suggest an object. Skip strings
 	_, err := e.lexer.Lex()
 	if err != nil {
 		switch err.(type) {
