@@ -73,11 +73,6 @@ func (e *CompletionEngine) Suggest(s string) ([]string, error) {
 	}
 	switch lexemes[len(lexemes)-2] {
 	case ".":
-		subject, err := getSubject(string(lexemes[len(lexemes)-3])) // get lexeme before dot
-		if err != nil {
-			panic("unimplemented")
-		}
-		e.subject = subject
 		return e.suggestFromSubject(string(lexemes[len(lexemes)-1]))
 	}
 
