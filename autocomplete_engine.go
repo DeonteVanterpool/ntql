@@ -56,12 +56,25 @@ func (e *CompletionEngine) Suggest(s string) ([]string, error) {
 	// at each dot, we must suggest a verb. at each open paren, we must suggest an object. at each close paren, we must suggest a connector. if outside of a method call, suggest a subject. if inside of a method call, suggest an object. Skip strings
 	// dot -> suggest verb; open paren + inside method -> suggest object; open paren + outside method -> suggest subject; closing paren + lastcharspace -> suggest connector
 	var lexemes []Lexeme
+	var innerParens = -1
 	for !e.scanner.atEnd() {
 		lexeme, err := e.scanner.ScanLexeme()
 		if err != nil {
 			return nil, err
 		}
 		lexemes = append(lexemes, lexeme)
+		if len(lexemes) >= 4 { // need enough space for the lexemes (subject) (dot) (verb) (openparen)
+			if lexemes[len(lexemes)-3] == "." && lexeme == "(" { // going inside a method
+				// now we need to start counting parentheses
+				innerParens = 0
+			}
+		}
+		if innerParens >= 0 && lexeme == "(" { // >= 0 indicates that we are inside a method call
+			innerParens++
+		}
+		if innerParens >= 0 && lexeme == ")" {
+			innerParens--
+		}
 	}
 
 	if lexemes[len(lexemes)-1][0] == '"' { // last lexeme string
