@@ -48,23 +48,32 @@ func NewAutocompleteEngine(tags []string) *CompletionEngine {
 
 func (e *CompletionEngine) Suggest(s string) ([]string, error) {
 	if len(s) == 0 {
-		// return e.Subject()
+		return e.SuggestSubject("")
 	}
 
 	e.scanner = NewScanner(s)
 
-	// at each space, we must suggest something else. at each dot, we must suggest a verb. at each open paren, we must suggest an object. at each close paren, we must suggest a connector. if outside of a method call, suggest a subject. if inside of a method call, suggest an object. Skip strings
-	_, err := e.lexer.Lex()
-	if err != nil {
-		switch err.(type) {
-		case ErrEndOfInput:
-			return nil, nil
-		default:
+	// at each dot, we must suggest a verb. at each open paren, we must suggest an object. at each close paren, we must suggest a connector. if outside of a method call, suggest a subject. if inside of a method call, suggest an object. Skip strings
+	// dot -> suggest verb; open paren + inside method -> suggest object; open paren + outside method -> suggest subject; closing paren + lastcharspace -> suggest connector
+	var lexemes []Lexeme
+	for !e.scanner.atEnd() {
+		lexeme, err := e.scanner.ScanLexeme()
+		if err != nil {
 			return nil, err
 		}
+		lexemes = append(lexemes, lexeme)
 	}
-	if !e.lexer.atEnd() {
 
+	if lexemes[len(lexemes)-1][0] == '"' { // last lexeme string
+		return []string{}, nil
+	}
+	switch lexemes[len(lexemes)-1] {
+	case ".":
+		return e.suggestFromSubject("")
+	}
+	switch lexemes[len(lexemes)-2] {
+	case ".":
+		return e.suggestFromSubject(string(lexemes[len(lexemes)-1]))
 	}
 
 	// before dot and outside of method call: suggest subject
