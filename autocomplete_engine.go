@@ -65,6 +65,10 @@ func (e *CompletionEngine) Suggest(s string) ([]string, error) {
 		lexemes = append(lexemes, lexeme)
 		if len(lexemes) >= 4 { // need enough space for the lexemes (subject) (dot) (verb) (openparen)
 			if lexemes[len(lexemes)-3] == "." && lexeme == "(" { // going inside a method
+				e.subject, err = getSubject(string(lexemes[len(lexemes)-4]))
+				if err != nil {
+					return nil, err
+				}
 				// now we need to start counting parentheses
 				innerParens = 0
 			}
@@ -77,12 +81,21 @@ func (e *CompletionEngine) Suggest(s string) ([]string, error) {
 		}
 	}
 
+	insideMethodCall := innerParens >= 0
+
 	if lexemes[len(lexemes)-1][0] == '"' { // last lexeme string
 		return []string{}, nil
 	}
 	switch lexemes[len(lexemes)-1] {
 	case ".":
 		return e.suggestFromSubject("")
+	case "(":
+		if insideMethodCall {
+			// suggest from valid objects TODO:
+			panic("unimplemented")
+		} else {
+			return e.SuggestSubject("")
+		}
 	}
 	switch lexemes[len(lexemes)-2] {
 	case ".":
