@@ -356,17 +356,11 @@ func toLowerCase(s string) string {
 func (p *Parser) Subject() (string, error) {
 	if p.match(TokenSubject) {
 		subject := p.previous().Literal
-		for _, s := range validSubjects {
-			if toLowerCase(s.Name) == toLowerCase(subject) {
-				return s.Name, nil
-			}
-			for _, alias := range s.Aliases {
-				if toLowerCase(alias) == toLowerCase(subject) {
-					return s.Name, nil
-				}
-			}
+		s, err := getSubject(subject)
+		if err != nil {
+			return "", NewParserError("Invalid subject: "+subject, p.previous())
 		}
-		return "", NewParserError("Invalid subject: "+subject, p.previous())
+		return s.Name, nil
 	} else {
 		return "", NewParserError("Expected subject", p.previous())
 	}

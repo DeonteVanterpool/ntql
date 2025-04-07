@@ -32,7 +32,7 @@ type CompletionEngine struct {
 
 	subjectTrie *trie.Trie
 
-	subject Subject
+	subject *Subject
 
 	verbTrie *trie.Trie
 
@@ -73,6 +73,11 @@ func (e *CompletionEngine) Suggest(s string) ([]string, error) {
 	}
 	switch lexemes[len(lexemes)-2] {
 	case ".":
+		subject, err := getSubject(string(lexemes[len(lexemes)-3])) // get lexeme before dot
+		if err != nil {
+			panic("unimplemented")
+		}
+		e.subject = subject
 		return e.suggestFromSubject(string(lexemes[len(lexemes)-1]))
 	}
 
@@ -85,6 +90,21 @@ func (e *CompletionEngine) Suggest(s string) ([]string, error) {
 	// End tokens: TokenBang, TokenDot, TokenLParen, TokenRParen
 	// if last token is end token, and no error: suggest from expected tokens
 	return nil, nil
+}
+
+func getSubject(s string) (*Subject, error) {
+	for _, subject := range validSubjects {
+		if toLowerCase(subject.Name) == toLowerCase(s) {
+			return &subject, nil
+		}
+		for _, alias := range subject.Aliases {
+			if toLowerCase(s) == toLowerCase(alias) {
+				return &subject, nil
+			}
+		}
+	}
+
+	return nil, ErrInvalidToken{}
 }
 
 func (e *CompletionEngine) SuggestSubject(s string) ([]string, error) {
