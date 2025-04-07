@@ -57,7 +57,9 @@ func (e *CompletionEngine) Suggest(s string) ([]string, error) {
 	// dot -> suggest verb; open paren + inside method -> suggest object; open paren + outside method -> suggest subject; closing paren + lastcharspace -> suggest connector
 	var lexemes []Lexeme
 	var innerParens = -1
+	lastOpenParen := -1
 	for !e.scanner.atEnd() {
+		pos := e.scanner.GetPosition()
 		lexeme, err := e.scanner.ScanLexeme()
 		if err != nil {
 			return nil, err
@@ -78,6 +80,9 @@ func (e *CompletionEngine) Suggest(s string) ([]string, error) {
 		}
 		if innerParens >= 0 && lexeme == ")" {
 			innerParens--
+		}
+		if lexeme == "(" {
+			lastOpenParen = pos
 		}
 	}
 
@@ -105,6 +110,10 @@ func (e *CompletionEngine) Suggest(s string) ([]string, error) {
 		} else {
 			return e.SuggestSubject(string(lexemes[len(lexemes)-1]))
 		}
+	default:
+		if lastCharSpace(s) {
+
+		}
 	}
 
 	// before dot and outside of method call: suggest subject
@@ -116,6 +125,10 @@ func (e *CompletionEngine) Suggest(s string) ([]string, error) {
 	// End tokens: TokenBang, TokenDot, TokenLParen, TokenRParen
 	// if last token is end token, and no error: suggest from expected tokens
 	return nil, nil
+}
+
+func lastCharSpace(s string) bool {
+	return s[len(s)-1] == ' '
 }
 
 func (e *CompletionEngine) suggestObjects(s string) ([]string, error) {
