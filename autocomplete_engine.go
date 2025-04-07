@@ -86,13 +86,12 @@ func (e *CompletionEngine) Suggest(s string) ([]string, error) {
 	if lexemes[len(lexemes)-1][0] == '"' { // last lexeme string
 		return []string{}, nil
 	}
-	switch lexemes[len(lexemes)-1] {
+	switch lexemes[len(lexemes)-1] { // NOTE: changing the order of the following switch statements will probably break the code for example when there are two openparens
 	case ".":
 		return e.suggestFromSubject("")
 	case "(":
 		if insideMethodCall {
-			// suggest from valid objects TODO:
-			panic("unimplemented")
+			return e.suggestObjects("")
 		} else {
 			return e.SuggestSubject("")
 		}
@@ -100,6 +99,12 @@ func (e *CompletionEngine) Suggest(s string) ([]string, error) {
 	switch lexemes[len(lexemes)-2] {
 	case ".":
 		return e.suggestFromSubject(string(lexemes[len(lexemes)-1]))
+	case "(":
+		if insideMethodCall {
+			return e.suggestObjects(string(lexemes[len(lexemes)-1]))
+		} else {
+			return e.SuggestSubject(string(lexemes[len(lexemes)-1]))
+		}
 	}
 
 	// before dot and outside of method call: suggest subject
@@ -111,6 +116,10 @@ func (e *CompletionEngine) Suggest(s string) ([]string, error) {
 	// End tokens: TokenBang, TokenDot, TokenLParen, TokenRParen
 	// if last token is end token, and no error: suggest from expected tokens
 	return nil, nil
+}
+
+func (e *CompletionEngine) suggestObjects(s string) ([]string, error) {
+	panic("unimplemented") // TODO: implement this
 }
 
 func getSubject(s string) (*Subject, error) {
