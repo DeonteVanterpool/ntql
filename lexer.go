@@ -44,7 +44,7 @@ func (e ErrInvalidToken) Error() string {
 		}
 	}
 
-	return fmt.Sprintf("Invalid type: expected type from [%s]", expected)
+	return fmt.Sprintf("Invalid lexme '%s': expected type from [%s]", e.Lexeme, expected)
 }
 
 type ErrInvalidToken struct {
@@ -207,15 +207,12 @@ func (t *Lexer) ScanToken() error {
 
 func (t *Lexer) lastToken() (Token, error) {
 	if len(t.Tokens) == 0 {
-		return Token{}, fmt.Errorf("No tokens")
+		return Token{}, ErrEndOfInput{}
 	}
 	return t.Tokens[len(t.Tokens)-1], nil
 }
 
 func (t *Lexer) matchSubject(lexeme Lexeme) (bool, error) {
-	if lexeme == "" {
-		return false, nil
-	}
 	t.appendToken(TokenSubject, lexeme)
 	t.ExpectedTokens = []TokenType{TokenDot}
 	subj, err := getSubject(string(lexeme))
