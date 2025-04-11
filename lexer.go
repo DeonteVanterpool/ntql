@@ -2,7 +2,6 @@ package ntql
 
 import (
 	"fmt"
-	"strings"
 )
 
 type Lexer struct {
@@ -51,6 +50,7 @@ func (e ErrInvalidToken) Error() string {
 type ErrInvalidToken struct {
 	Expected []TokenType
 	Position int
+	Lexeme   Lexeme
 }
 
 var connectorTypes = []TokenType{TokenAnd, TokenOr}
@@ -199,30 +199,10 @@ func (t *Lexer) ScanToken() error {
 				return nil
 			}
 		default:
-			return ErrInvalidToken{Expected: t.ExpectedTokens, Position: t.Scanner.Pos}
+			return ErrInvalidToken{Expected: t.ExpectedTokens, Position: t.Scanner.Pos, Lexeme: lexeme}
 		}
 	}
 	return nil
-}
-
-func (t *Lexer) LastTokenComplete() (bool, error) {
-	lastChar := t.Scanner.S[len(t.Scanner.S)-1]
-	symbols := []byte{'!', '(', ')', '.', ' '}
-
-	lastToken, err := t.lastToken()
-	if err != nil {
-		return false, err
-	}
-
-	if lastToken.Kind == TokenString && lastChar != '"' { // incomplete strings should never be complete even if they end with a symbol
-		return false, nil
-	}
-
-	if strings.Contains(string(symbols), string(lastChar)) {
-		return true, nil
-	}
-
-	return false, nil
 }
 
 func (t *Lexer) lastToken() (Token, error) {
