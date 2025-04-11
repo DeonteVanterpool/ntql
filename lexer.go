@@ -230,15 +230,9 @@ func (t *Lexer) matchSubject(lexeme Lexeme) (bool, error) {
 		return false, ErrInvalidSubject{Position: t.Scanner.Pos, Lexeme: lexeme}
 	}
 
-	t.clearExpectedTokens()
-
 	t.ExpectedDataTypes = subj.ValidTypes
 
 	return true, nil
-}
-
-func (t *Lexer) clearExpectedTokens() {
-	t.ExpectedTokens = []TokenType{}
 }
 
 func (t *Lexer) matchTag(lexeme Lexeme) (bool, error) {
@@ -424,10 +418,6 @@ func (t *Lexer) appendToken(kind TokenType, lexeme Lexeme) {
 
 func (t *Lexer) atEnd() bool {
 	return t.Scanner.atEnd()
-}
-
-func (t *Lexer) Error(e error) error {
-	return fmt.Errorf("Error: %s", e.Error())
 }
 
 func (t *Lexer) LastLexeme() (Lexeme, error) {
