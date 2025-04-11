@@ -291,10 +291,7 @@ func (t *Lexer) matchLParen(lexeme Lexeme) (bool, error) {
 		} else { // keep same fsm state
 
 		}
-		err := t.appendToken(TokenLParen, lexeme)
-		if err != nil {
-			return false, err
-		}
+		t.appendToken(TokenLParen, lexeme)
 		return true, nil
 	}
 	return false, nil
@@ -388,9 +385,8 @@ func (t *Lexer) GetPosition() int {
 	return t.Scanner.Pos
 }
 
-func (t *Lexer) appendToken(kind TokenType, lexeme Lexeme) error {
+func (t *Lexer) appendToken(kind TokenType, lexeme Lexeme) {
 	t.Tokens = append(t.Tokens, createToken(string(lexeme), kind, t.GetPosition()))
-	return nil
 }
 
 func (t *Lexer) atEnd() bool {
