@@ -306,7 +306,7 @@ func (t *Lexer) matchRParen(lexeme Lexeme) (bool, error) {
 	if lexeme == ")" {
 		t.appendToken(TokenRParen, lexeme)
 		t.ExpectedTokens = append(connectorTypes, TokenRParen)
-		if t.InnerDepth != 0 { // if we are not in a method
+		if t.InnerDepth != 0 { // if we are in a method
 			t.InnerDepth--
 		} else {
 		}
