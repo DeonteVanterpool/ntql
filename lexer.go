@@ -13,23 +13,21 @@ type Lexer struct {
 	lastTokenVerb  bool
 }
 
-type TokenizationError struct {
-	Message  error
+type ErrorCode int
+
+type ErrIncompleteString struct {
 	Position int
 }
 
-func newTokenizationError(message error, position int) TokenizationError {
-	return TokenizationError{Message: message, Position: position}
-}
-
-func (e TokenizationError) Error() string {
-	return fmt.Sprintf("Tokenization Error at Position %d: %s", e.Position, e.Message.Error())
+func (e ErrIncompleteString) Error() string {
+	return fmt.Sprintf("Incomplete string")
 }
 
 type ErrEndOfInput struct{}
 
 type ErrInvalidCharacter struct {
-	Input byte
+	Input    byte
+	Position int
 }
 
 func (e ErrInvalidCharacter) Error() string {
@@ -52,6 +50,7 @@ func (e ErrInvalidToken) Error() string {
 
 type ErrInvalidToken struct {
 	Expected []TokenType
+	Position int
 }
 
 var connectorTypes = []TokenType{TokenAnd, TokenOr}
@@ -95,22 +94,6 @@ func (t *Lexer) ScanToken() error {
 			if res {
 				return nil
 			}
-		case TokenAnd:
-			res, err := t.matchAnd(lexeme)
-			if err != nil {
-				return err
-			}
-			if res {
-				return nil
-			}
-		case TokenOr:
-			res, err := t.matchOr(lexeme)
-			if err != nil {
-				return err
-			}
-			if res {
-				return nil
-			}
 		case TokenLParen:
 			res, err := t.matchLParen(lexeme)
 			if err != nil {
@@ -127,16 +110,24 @@ func (t *Lexer) ScanToken() error {
 			if res {
 				return nil
 			}
-		case TokenTag:
-			res, err := t.matchTag(lexeme)
+		case TokenDot:
+			res, err := t.matchDot(lexeme)
 			if err != nil {
 				return err
 			}
 			if res {
 				return nil
 			}
-		case TokenBool:
-			res, err := t.matchBool(lexeme)
+		case TokenAnd:
+			res, err := t.matchAnd(lexeme)
+			if err != nil {
+				return err
+			}
+			if res {
+				return nil
+			}
+		case TokenOr:
+			res, err := t.matchOr(lexeme)
 			if err != nil {
 				return err
 			}
@@ -145,6 +136,14 @@ func (t *Lexer) ScanToken() error {
 			}
 		case TokenSubject:
 			res, err := t.matchSubject(lexeme)
+			if err != nil {
+				return err
+			}
+			if res {
+				return nil
+			}
+		case TokenBool:
+			res, err := t.matchBool(lexeme)
 			if err != nil {
 				return err
 			}
@@ -191,8 +190,8 @@ func (t *Lexer) ScanToken() error {
 			if res {
 				return nil
 			}
-		case TokenDot:
-			res, err := t.matchDot(lexeme)
+		case TokenTag:
+			res, err := t.matchTag(lexeme)
 			if err != nil {
 				return err
 			}
@@ -200,7 +199,7 @@ func (t *Lexer) ScanToken() error {
 				return nil
 			}
 		default:
-			return newTokenizationError(ErrInvalidToken{Expected: t.ExpectedTokens}, t.Scanner.Pos)
+			return ErrInvalidToken{Expected: t.ExpectedTokens, Position: t.Scanner.Pos}
 		}
 	}
 	return nil

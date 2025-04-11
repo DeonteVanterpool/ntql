@@ -57,7 +57,7 @@ func (e *CompletionEngine) Suggest(s string) ([]string, error) {
 	// dot -> suggest verb; open paren + inside method -> suggest object; open paren + outside method -> suggest subject; closing paren + lastcharspace -> suggest connector
 	var lexemes []Lexeme
 	var innerParens = -1
-	lastOpenParen := -1
+	lastOpenParen := 0
 	for !e.scanner.atEnd() {
 		pos := e.scanner.GetPosition()
 		lexeme, err := e.scanner.ScanLexeme()
