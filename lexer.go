@@ -245,9 +245,6 @@ func (t *Lexer) clearExpectedTokens() {
 }
 
 func (t *Lexer) matchTag(lexeme Lexeme) (bool, error) {
-	if lexeme == "" {
-		return false, nil
-	}
 	t.appendToken(TokenTag, lexeme)
 	t.ExpectedTokens = []TokenType{TokenAnd, TokenOr, TokenRParen}
 	return true, nil
@@ -272,9 +269,6 @@ func (t *Lexer) matchDot(lexeme Lexeme) (bool, error) {
 }
 
 func (t *Lexer) matchVerb(lexeme Lexeme) (bool, error) {
-	if lexeme == "" {
-		return false, nil
-	}
 	t.appendToken(TokenVerb, lexeme)
 	t.ExpectedTokens = []TokenType{TokenLParen}
 	t.lastTokenVerb = true
