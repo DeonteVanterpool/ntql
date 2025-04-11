@@ -5,17 +5,27 @@ import (
 )
 
 type Lexer struct {
-	Tokens         []Token
-	Scanner        *Scanner
-	InnerDepth     int
-	ExpectedTokens []TokenType
-	lastTokenVerb  bool
+	Tokens            []Token
+	Scanner           *Scanner
+	InnerDepth        int
+	ExpectedTokens    []TokenType
+	lastTokenVerb     bool
+	ExpectedDataTypes []DType
 }
 
 type ErrorCode int
 
 type ErrIncompleteString struct {
 	Position int
+}
+
+type ErrInvalidSubject struct {
+	Position int
+	Lexeme   Lexeme
+}
+
+func (e ErrInvalidSubject) Error() string {
+	return fmt.Sprintf("Invalid subject: %s", e.Lexeme)
 }
 
 func (e ErrIncompleteString) Error() string {
@@ -217,25 +227,12 @@ func (t *Lexer) matchSubject(lexeme Lexeme) (bool, error) {
 	t.ExpectedTokens = []TokenType{TokenDot}
 	subj, err := getSubject(string(lexeme))
 	if err != nil {
-		return false, nil
+		return false, ErrInvalidSubject{Position: t.Scanner.Pos, Lexeme: lexeme}
 	}
 
 	t.clearExpectedTokens()
 
-	for _, dtype := range subj.ValidTypes {
-		switch dtype {
-		case DTypeString:
-			t.ExpectedTokens = append(t.ExpectedTokens, TokenString)
-		case DTypeInt:
-			t.ExpectedTokens = append(t.ExpectedTokens, TokenInt)
-		case DTypeDate:
-			t.ExpectedTokens = append(t.ExpectedTokens, TokenDate)
-		case DTypeDateTime:
-			t.ExpectedTokens = append(t.ExpectedTokens, TokenDateTime)
-		case DTypeTag:
-			t.ExpectedTokens = append(t.ExpectedTokens, TokenTag)
-		}
-	}
+	t.ExpectedDataTypes = subj.ValidTypes
 
 	return true, nil
 }
@@ -280,7 +277,21 @@ func (t *Lexer) matchLParen(lexeme Lexeme) (bool, error) {
 		prev, _ := t.lastToken()
 		if t.InnerDepth != 0 || prev.Kind == TokenVerb { // if we are in a method
 			t.InnerDepth++
-			t.ExpectedTokens = append([]TokenType{TokenLParen, TokenBang}, objectTypes...)
+			t.ExpectedTokens = []TokenType{TokenLParen, TokenBang}
+			for _, dtype := range t.ExpectedDataTypes {
+				switch dtype {
+				case DTypeString:
+					t.ExpectedTokens = append(t.ExpectedTokens, TokenString)
+				case DTypeInt:
+					t.ExpectedTokens = append(t.ExpectedTokens, TokenInt)
+				case DTypeDate:
+					t.ExpectedTokens = append(t.ExpectedTokens, TokenDate)
+				case DTypeDateTime:
+					t.ExpectedTokens = append(t.ExpectedTokens, TokenDateTime)
+				case DTypeTag:
+					t.ExpectedTokens = append(t.ExpectedTokens, TokenTag)
+				}
+			}
 			t.ExpectedTokens = append(t.ExpectedTokens, TokenBang)
 		} else { // keep same fsm state
 
