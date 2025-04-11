@@ -238,7 +238,7 @@ func (t *Lexer) matchSubject(lexeme Lexeme) (bool, error) {
 	}
 	t.appendToken(TokenSubject, lexeme)
 	t.ExpectedTokens = []TokenType{TokenDot}
-	subj, err := getSubject(lexeme)
+	subj, err := getSubject(string(lexeme))
 	if err != nil {
 		return false, nil
 	}

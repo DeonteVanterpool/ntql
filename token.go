@@ -12,7 +12,7 @@ const (
 	TokenTag
 	TokenDate
 	TokenDateTime
-	TokenNumber
+	TokenInt
 	TokenBool
 	TokenDot
 	TokenLParen
@@ -43,7 +43,7 @@ func (t TokenType) String() string {
 		return "Bool"
 	case TokenString:
 		return "String"
-	case TokenNumber:
+	case TokenInt:
 		return "Number"
 	case TokenDate:
 		return "Date"
