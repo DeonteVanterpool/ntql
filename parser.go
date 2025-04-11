@@ -17,7 +17,8 @@ const (
 	DTypeString DType = iota
 	DTypeInt
 	DTypeDate
-	DTypeIdentifier
+	DTypeTag
+	DTypeDateTime
 )
 
 type Subject struct {
@@ -52,7 +53,7 @@ var validSubjects = []Subject{
 			{Name: "after", Aliases: []string{}},
 			{Name: "equals", Aliases: []string{}},
 		},
-		ValidTypes: []DType{DTypeDate},
+		ValidTypes: []DType{DTypeDate, DTypeDateTime},
 	},
 	{
 		Name:    "status",
@@ -90,7 +91,7 @@ var validSubjects = []Subject{
 			{Name: "after", Aliases: []string{}},
 			{Name: "equals", Aliases: []string{}},
 		},
-		ValidTypes: []DType{DTypeDate},
+		ValidTypes: []DType{DTypeDate, DTypeDateTime},
 	},
 	{
 		Name:    "updatedAt",
@@ -100,7 +101,7 @@ var validSubjects = []Subject{
 			{Name: "after", Aliases: []string{}},
 			{Name: "equals", Aliases: []string{}},
 		},
-		ValidTypes: []DType{DTypeDate},
+		ValidTypes: []DType{DTypeDate, DTypeDateTime},
 	},
 	{
 		Name:    "completedAt",
@@ -110,7 +111,7 @@ var validSubjects = []Subject{
 			{Name: "after", Aliases: []string{}},
 			{Name: "equals", Aliases: []string{}},
 		},
-		ValidTypes: []DType{DTypeDate},
+		ValidTypes: []DType{DTypeDate, DTypeDateTime},
 	},
 	{
 		Name:    "createdBy",
@@ -126,7 +127,7 @@ var validSubjects = []Subject{
 		ValidVerbs: []Verb{
 			{Name: "equals", Aliases: []string{"eq"}},
 		},
-		ValidTypes: []DType{DTypeIdentifier},
+		ValidTypes: []DType{DTypeTag},
 	},
 }
 
@@ -466,7 +467,7 @@ func (p *Parser) ValueTerm() (ValueExpr, error) {
 }
 
 func (p *Parser) ValueObject() (ValueExpr, error) {
-	if p.match(TokenString) || p.match(TokenDate) || p.match(TokenTag) || p.match(TokenNumber) {
+	if p.match(TokenString) || p.match(TokenDate) || p.match(TokenTag) || p.match(TokenInt) {
 		return &Value{Value: p.previous().Literal}, nil
 	} else {
 		return nil, NewParserError("Expected value. Got: "+p.Tokens[p.Pos].Literal, p.Tokens[p.Pos])

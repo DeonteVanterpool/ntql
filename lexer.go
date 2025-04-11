@@ -174,7 +174,7 @@ func (t *Lexer) ScanToken() error {
 			if res {
 				return nil
 			}
-		case TokenNumber:
+		case TokenInt:
 			res, err := t.matchDigit(lexeme)
 			if err != nil {
 				return err
@@ -238,7 +238,33 @@ func (t *Lexer) matchSubject(lexeme Lexeme) (bool, error) {
 	}
 	t.appendToken(TokenSubject, lexeme)
 	t.ExpectedTokens = []TokenType{TokenDot}
+	subj, err := getSubject(lexeme)
+	if err != nil {
+		return false, nil
+	}
+
+	t.clearExpectedTokens()
+
+	for _, dtype := range subj.ValidTypes {
+		switch dtype {
+		case DTypeString:
+			t.ExpectedTokens = append(t.ExpectedTokens, TokenString)
+		case DTypeInt:
+			t.ExpectedTokens = append(t.ExpectedTokens, TokenInt)
+		case DTypeDate:
+			t.ExpectedTokens = append(t.ExpectedTokens, TokenDate)
+		case DTypeDateTime:
+			t.ExpectedTokens = append(t.ExpectedTokens, TokenDateTime)
+		case DTypeTag:
+			t.ExpectedTokens = append(t.ExpectedTokens, TokenTag)
+		}
+	}
+
 	return true, nil
+}
+
+func (t *Lexer) clearExpectedTokens() {
+	t.ExpectedTokens = []TokenType{}
 }
 
 func (t *Lexer) matchTag(lexeme Lexeme) (bool, error) {
@@ -374,7 +400,7 @@ func (t *Lexer) matchString(lexeme Lexeme) (bool, error) {
 
 func (t *Lexer) matchDigit(lexeme Lexeme) (bool, error) {
 	if numRegexp.MatchString(string(lexeme)) {
-		t.appendToken(TokenNumber, lexeme)
+		t.appendToken(TokenInt, lexeme)
 		t.ExpectedTokens = append(connectorTypes, TokenRParen)
 		return true, nil
 	}
