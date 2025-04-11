@@ -319,7 +319,21 @@ func (t *Lexer) matchAnd(lexeme Lexeme) (bool, error) {
 	if lexeme == "AND" {
 		t.appendToken(TokenAnd, lexeme)
 		if t.InnerDepth != 0 { // if we are in a method
-			t.ExpectedTokens = append([]TokenType{TokenLParen, TokenBang}, objectTypes...)
+			t.ExpectedTokens = []TokenType{TokenLParen, TokenBang}
+			for _, dtype := range t.ExpectedDataTypes {
+				switch dtype {
+				case DTypeString:
+					t.ExpectedTokens = append(t.ExpectedTokens, TokenString)
+				case DTypeInt:
+					t.ExpectedTokens = append(t.ExpectedTokens, TokenInt)
+				case DTypeDate:
+					t.ExpectedTokens = append(t.ExpectedTokens, TokenDate)
+				case DTypeDateTime:
+					t.ExpectedTokens = append(t.ExpectedTokens, TokenDateTime)
+				case DTypeTag:
+					t.ExpectedTokens = append(t.ExpectedTokens, TokenTag)
+				}
+			}
 		} else {
 			t.ExpectedTokens = []TokenType{TokenLParen, TokenBang, TokenSubject}
 		}
@@ -332,7 +346,21 @@ func (t *Lexer) matchOr(lexeme Lexeme) (bool, error) {
 	if lexeme == "OR" {
 		t.appendToken(TokenOr, lexeme)
 		if t.InnerDepth != 0 { // if we are in a method
-			t.ExpectedTokens = append([]TokenType{TokenLParen, TokenBang}, objectTypes...)
+			t.ExpectedTokens = []TokenType{TokenLParen, TokenBang}
+			for _, dtype := range t.ExpectedDataTypes {
+				switch dtype {
+				case DTypeString:
+					t.ExpectedTokens = append(t.ExpectedTokens, TokenString)
+				case DTypeInt:
+					t.ExpectedTokens = append(t.ExpectedTokens, TokenInt)
+				case DTypeDate:
+					t.ExpectedTokens = append(t.ExpectedTokens, TokenDate)
+				case DTypeDateTime:
+					t.ExpectedTokens = append(t.ExpectedTokens, TokenDateTime)
+				case DTypeTag:
+					t.ExpectedTokens = append(t.ExpectedTokens, TokenTag)
+				}
+			}
 		} else {
 			t.ExpectedTokens = []TokenType{TokenLParen, TokenBang, TokenSubject}
 		}
