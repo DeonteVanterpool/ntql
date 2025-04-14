@@ -13,12 +13,6 @@ type Lexer struct {
 	ExpectedDataTypes []DType
 }
 
-type ErrorCode int
-
-type ErrIncompleteString struct {
-	Position int
-}
-
 type ErrInvalidSubject struct {
 	Position int
 	Lexeme   Lexeme
@@ -28,20 +22,7 @@ func (e ErrInvalidSubject) Error() string {
 	return fmt.Sprintf("Invalid subject: %s", e.Lexeme)
 }
 
-func (e ErrIncompleteString) Error() string {
-	return fmt.Sprintf("Incomplete string")
-}
-
 type ErrEndOfInput struct{}
-
-type ErrInvalidCharacter struct {
-	Input    byte
-	Position int
-}
-
-func (e ErrInvalidCharacter) Error() string {
-	return fmt.Sprintf("Invalid character: %s", string(e.Input))
-}
 
 func (e ErrInvalidToken) Error() string {
 	// convert expected tokens to string
@@ -268,7 +249,7 @@ func (t *Lexer) matchVerb(lexeme Lexeme) (bool, error) {
 
 func (t *Lexer) matchLParen(lexeme Lexeme) (bool, error) {
 	if lexeme == "(" {
-		prev, _ := t.lastToken()
+		prev, _ := t.lastToken()                         // if there are no tokens, we get an error, but we can ignore it here
 		if t.InnerDepth != 0 || prev.Kind == TokenVerb { // if we are in a method
 			t.InnerDepth++
 			t.ExpectedTokens = []TokenType{TokenLParen, TokenBang}

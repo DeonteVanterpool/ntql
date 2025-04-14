@@ -3,6 +3,8 @@ package ntql
 import (
 	// "regexp"
 
+	"fmt"
+
 	"github.com/shivamMg/trie"
 )
 
@@ -36,7 +38,7 @@ type CompletionEngine struct {
 
 	verbTrie *trie.Trie
 
-	scanner *Scanner
+	lexer *Lexer
 }
 
 func NewAutocompleteEngine(tags []string) *CompletionEngine {
@@ -51,75 +53,41 @@ func (e *CompletionEngine) Suggest(s string) ([]string, error) {
 		return e.SuggestSubject("")
 	}
 
-	e.scanner = NewScanner(s)
+	e.lexer = NewLexer(s)
 
 	// at each dot, we must suggest a verb. at each open paren, we must suggest an object. at each close paren, we must suggest a connector. if outside of a method call, suggest a subject. if inside of a method call, suggest an object. Skip strings
 	// dot -> suggest verb; open paren + inside method -> suggest object; open paren + outside method -> suggest subject; closing paren + lastcharspace -> suggest connector
-	var lexemes []Lexeme
-	var innerParens = -1
-	// lastOpenParen := 0
-	for !e.scanner.atEnd() {
-		// pos := e.scanner.GetPosition()
-		lexeme, err := e.scanner.ScanLexeme()
-		if err != nil {
-			return nil, err
-		}
-		lexemes = append(lexemes, lexeme)
-		if len(lexemes) >= 4 { // need enough space for the lexemes (subject) (dot) (verb) (openparen)
-			if lexemes[len(lexemes)-3] == "." && lexeme == "(" { // going inside a method
-				e.subject, err = getSubject(string(lexemes[len(lexemes)-4]))
-				if err != nil {
-					return nil, err
-				}
-				// now we need to start counting parentheses
-				innerParens = 0
-			}
-		}
-		if innerParens >= 0 && lexeme == "(" { // >= 0 indicates that we are inside a method call
-			innerParens++
-		}
-		if innerParens >= 0 && lexeme == ")" {
-			innerParens--
-		}
-		if lexeme == "(" {
-			// lastOpenParen = pos
-		}
-	}
-
-	insideMethodCall := innerParens >= 0
-
-	if lexemes[len(lexemes)-1][0] == '"' { // last lexeme string
-		return []string{}, nil
-	}
-	switch lexemes[len(lexemes)-1] { // NOTE: changing the order of the following switch statements will probably break the code for example when there are two openparens
-	case ".":
-		return e.suggestFromSubject("")
-	case "(":
-		if insideMethodCall {
-			return e.suggestObjects("")
-		} else {
-			return e.SuggestSubject("")
-		}
-	}
-	switch lexemes[len(lexemes)-2] {
-	case ".":
-		return e.suggestFromSubject(string(lexemes[len(lexemes)-1]))
-	case "(":
-		if insideMethodCall {
-			return e.suggestObjects(string(lexemes[len(lexemes)-1]))
-		} else {
-			return e.SuggestSubject(string(lexemes[len(lexemes)-1]))
-		}
-	default:
-		if lastCharSpace(s) {
-
-		}
-	}
 
 	// before dot and outside of method call: suggest subject
 	// after dot and outside of method call: suggest verb
 	// inside of method call: suggest appropriate object from dtypes
 	// last token object: suggest connector
+
+	tokens, err := e.lexer.Lex()
+	if err != nil {
+		switch err.(type) {
+		case ErrInvalidSubject:
+			err := err.(ErrInvalidSubject)
+			return e.SuggestSubject(string(err.Lexeme))
+		case ErrInvalidToken:
+			fmt.Errorf("unimplemented")
+			err := err.(ErrInvalidToken)
+			return e.suggestTokens(e.lexer.ExpectedTokens, err.Lexeme)
+		}
+	}
+
+	if s[len(s)-1] == ' ' { // last character space
+		return e.suggestTokens(e.lexer.ExpectedTokens, "")
+	} else if s[len(s)-1] == '.' {
+		return e.suggestTokens(e.lexer.ExpectedTokens, "")
+	} else if 
+	if tokens[len(tokens)-1].Kind == TokenVerb {
+		return e.suggestFromSubject(tokens[len(tokens)-3])
+	}
+
+	if s[len(s)-1] == ' ' { // last character space
+
+	}
 
 	// TODO: Test expected tokens when subject blank, when verb blank, when object blank, when tag blank, etc.
 	// End tokens: TokenBang, TokenDot, TokenLParen, TokenRParen
