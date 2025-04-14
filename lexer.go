@@ -141,16 +141,16 @@ func (t *Lexer) ScanToken() error {
 			if res {
 				return nil
 			}
-		case TokenDate:
-			res, err := t.matchDate(lexeme)
+		case TokenDateTime:
+			res, err := t.matchDateTime(lexeme)
 			if err != nil {
 				return err
 			}
 			if res {
 				return nil
 			}
-		case TokenDateTime:
-			res, err := t.matchDateTime(lexeme)
+		case TokenDate:
+			res, err := t.matchDate(lexeme)
 			if err != nil {
 				return err
 			}
@@ -208,6 +208,7 @@ func (t *Lexer) matchSubject(lexeme Lexeme) (bool, error) {
 	t.ExpectedTokens = []TokenType{TokenDot}
 	subj, err := getSubject(string(lexeme))
 	if err != nil {
+		t.ExpectedDataTypes = []DType{}
 		return false, ErrInvalidSubject{Position: t.Scanner.Pos, Lexeme: lexeme}
 	}
 
@@ -259,10 +260,10 @@ func (t *Lexer) matchLParen(lexeme Lexeme) (bool, error) {
 					t.ExpectedTokens = append(t.ExpectedTokens, TokenString)
 				case DTypeInt:
 					t.ExpectedTokens = append(t.ExpectedTokens, TokenInt)
-				case DTypeDate:
-					t.ExpectedTokens = append(t.ExpectedTokens, TokenDate)
 				case DTypeDateTime:
 					t.ExpectedTokens = append(t.ExpectedTokens, TokenDateTime)
+				case DTypeDate:
+					t.ExpectedTokens = append(t.ExpectedTokens, TokenDate)
 				case DTypeTag:
 					t.ExpectedTokens = append(t.ExpectedTokens, TokenTag)
 				}
@@ -301,10 +302,10 @@ func (t *Lexer) matchAnd(lexeme Lexeme) (bool, error) {
 					t.ExpectedTokens = append(t.ExpectedTokens, TokenString)
 				case DTypeInt:
 					t.ExpectedTokens = append(t.ExpectedTokens, TokenInt)
-				case DTypeDate:
-					t.ExpectedTokens = append(t.ExpectedTokens, TokenDate)
 				case DTypeDateTime:
 					t.ExpectedTokens = append(t.ExpectedTokens, TokenDateTime)
+				case DTypeDate:
+					t.ExpectedTokens = append(t.ExpectedTokens, TokenDate)
 				case DTypeTag:
 					t.ExpectedTokens = append(t.ExpectedTokens, TokenTag)
 				}
@@ -328,10 +329,10 @@ func (t *Lexer) matchOr(lexeme Lexeme) (bool, error) {
 					t.ExpectedTokens = append(t.ExpectedTokens, TokenString)
 				case DTypeInt:
 					t.ExpectedTokens = append(t.ExpectedTokens, TokenInt)
-				case DTypeDate:
-					t.ExpectedTokens = append(t.ExpectedTokens, TokenDate)
 				case DTypeDateTime:
 					t.ExpectedTokens = append(t.ExpectedTokens, TokenDateTime)
+				case DTypeDate:
+					t.ExpectedTokens = append(t.ExpectedTokens, TokenDate)
 				case DTypeTag:
 					t.ExpectedTokens = append(t.ExpectedTokens, TokenTag)
 				}
