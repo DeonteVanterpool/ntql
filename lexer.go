@@ -54,6 +54,10 @@ func NewLexer(s string) *Lexer {
 	return &Lexer{Tokens: []Token{}, Scanner: NewScanner(s), InnerDepth: 0, ExpectedTokens: []TokenType{TokenLParen, TokenBang, TokenSubject}}
 }
 
+func (l *Lexer) insideMethodCall() bool {
+	return l.InnerDepth > 0
+}
+
 // Lex takes a string and returns a slice of tokens
 // Example: tag.equals(hello OR goodbye) OR (date.before(2024-01-08) AND date.after(2024-01-09))
 // tag.equals(hello) AND date.before(2021-01-01) AND title.startswith(("bar" OR "c\"\\runch") AND "foo")
@@ -292,7 +296,7 @@ func (t *Lexer) matchRParen(lexeme Lexeme) (bool, error) {
 }
 
 func (t *Lexer) matchAnd(lexeme Lexeme) (bool, error) {
-	if lexeme == "AND" {
+	if toLowerCase(string(lexeme)) == "and" {
 		t.appendToken(TokenAnd, lexeme)
 		if t.InnerDepth != 0 { // if we are in a method
 			t.ExpectedTokens = []TokenType{TokenLParen, TokenBang}
@@ -319,7 +323,7 @@ func (t *Lexer) matchAnd(lexeme Lexeme) (bool, error) {
 }
 
 func (t *Lexer) matchOr(lexeme Lexeme) (bool, error) {
-	if lexeme == "OR" {
+	if toLowerCase(string(lexeme)) == "or" {
 		t.appendToken(TokenOr, lexeme)
 		if t.InnerDepth != 0 { // if we are in a method
 			t.ExpectedTokens = []TokenType{TokenLParen, TokenBang}
