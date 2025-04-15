@@ -29,23 +29,37 @@ func NewMegaTrie() *MegaTrie {
 
 // CompletionEngine is a trie-based autocompletion engine for NTQL
 type CompletionEngine struct {
-	// checks to see if we're in a function call or not
-	innerParens int
-
-	subjectTrie *trie.Trie
-
-	subject *Subject
-
-	verbTrie *trie.Trie
+	subjectTrie   *trie.Trie
+	connectorTrie *trie.Trie
+	tagTrie       *trie.Trie
 
 	lexer *Lexer
 }
 
 func NewAutocompleteEngine(tags []string) *CompletionEngine {
 	return &CompletionEngine{
-		subjectTrie: NewMegaTrie().subjectTrie,
-		innerParens: 0,
+		subjectTrie:   NewMegaTrie().subjectTrie,
+		connectorTrie: NewConnectorTrie(),
+		tagTrie:       NewTagTrie(tags),
 	}
+}
+
+func NewConnectorTrie() *trie.Trie {
+	connectorTrie := trie.New()
+	for _, connector := range connectorTypes {
+		connectorTrie.Put([]string{connector.String()}, connector)
+	}
+
+	return connectorTrie
+}
+
+func NewTagTrie(tags []string) *trie.Trie {
+	tagTrie := trie.New()
+	for _, tag := range tags {
+		tagTrie.Put([]string{tag}, tag)
+	}
+
+	return tagTrie
 }
 
 func (e *CompletionEngine) Suggest(s string) ([]string, error) {
@@ -55,38 +69,75 @@ func (e *CompletionEngine) Suggest(s string) ([]string, error) {
 
 	e.lexer = NewLexer(s)
 
-	// at each dot, we must suggest a verb. at each open paren, we must suggest an object. at each close paren, we must suggest a connector. if outside of a method call, suggest a subject. if inside of a method call, suggest an object. Skip strings
-	// dot -> suggest verb; open paren + inside method -> suggest object; open paren + outside method -> suggest subject; closing paren + lastcharspace -> suggest connector
-
-	// before dot and outside of method call: suggest subject
-	// after dot and outside of method call: suggest verb
-	// inside of method call: suggest appropriate object from dtypes
-	// last token object: suggest connector
-
-	tokens, err := e.lexer.Lex()
-	if err != nil {
-		switch err.(type) {
-		case ErrInvalidSubject:
-			err := err.(ErrInvalidSubject)
-			return e.SuggestSubject(string(err.Lexeme))
-		case ErrInvalidToken:
-			fmt.Errorf("unimplemented")
-			err := err.(ErrInvalidToken)
-			return e.suggestTokens(e.lexer.ExpectedTokens, err.Lexeme)
+	var lastToken Token
+	var lastSubject *Subject = nil
+	for {
+		err := e.lexer.ScanToken()
+		exit := false
+		if err != nil {
+			switch err.(type) {
+			case ErrEndOfInput:
+				exit = false
+			case ErrInvalidSubject:
+				err := err.(ErrInvalidSubject)
+				return e.SuggestSubject(string(err.Lexeme))
+			case ErrInvalidToken:
+				return []string{}, nil
+			default:
+				fmt.Errorf("Unexpected Error: %v", err.Error())
+			}
+		}
+		lastToken, err = e.lexer.lastToken()
+		if err != nil {
+			return e.SuggestSubject("")
+		}
+		if lastToken.Kind == TokenSubject {
+			lastSubject, err = getSubject(string(lastToken.Literal))
+			if err != nil { // invalid subject
+				return e.SuggestSubject(string(lastToken.Literal))
+			}
+		}
+		if exit {
+			break
 		}
 	}
 
-	if s[len(s)-1] == ' ' { // last character space
-		return e.suggestTokens(e.lexer.ExpectedTokens, "")
-	} else if s[len(s)-1] == '.' {
-		return e.suggestTokens(e.lexer.ExpectedTokens, "")
-	} else if 
-	if tokens[len(tokens)-1].Kind == TokenVerb {
-		return e.suggestFromSubject(tokens[len(tokens)-3])
-	}
-
-	if s[len(s)-1] == ' ' { // last character space
-
+	if lastCharSpace(s) {
+		switch lastToken.Kind {
+		case TokenSubject, TokenVerb, TokenBang, TokenLParen:
+			return []string{}, nil
+		case TokenTag, TokenBool, TokenString, TokenInt, TokenDate, TokenDateTime, TokenRParen:
+			return e.suggestConnector("")
+		case TokenOr, TokenAnd:
+			if e.lexer.insideMethodCall() {
+				return e.suggestObjects(*lastSubject, "")
+			} else {
+				return e.SuggestSubject("")
+			}
+		case TokenDot:
+			return e.suggestFromSubject(*lastSubject, "")
+		default:
+			panic("Unimplemented token type in switch statemen")
+		}
+	} else {
+		switch lastToken.Kind {
+		case TokenSubject:
+			return e.SuggestSubject(lastToken.Literal)
+		case TokenVerb:
+			return e.suggestFromSubject(*lastSubject, lastToken.Literal)
+		case TokenTag, TokenBool, TokenString, TokenInt, TokenDate, TokenDateTime:
+			return e.suggestObjects(*lastSubject, lastToken.Literal)
+		case TokenOr, TokenAnd, TokenRParen: // TODO: handle incomplete connector cases on error
+			return []string{}, nil
+		case TokenDot:
+			return e.suggestFromSubject(*lastSubject, lastToken.Literal)
+		case TokenBang, TokenLParen:
+			if e.lexer.insideMethodCall() {
+				return e.suggestObjects(*lastSubject, "")
+			} else {
+				return e.SuggestSubject("")
+			}
+		}
 	}
 
 	// TODO: Test expected tokens when subject blank, when verb blank, when object blank, when tag blank, etc.
@@ -99,8 +150,31 @@ func lastCharSpace(s string) bool {
 	return s[len(s)-1] == ' '
 }
 
-func (e *CompletionEngine) suggestObjects(s string) ([]string, error) {
-	panic("unimplemented") // TODO: implement this
+func (e *CompletionEngine) suggestConnector(s string) ([]string, error) {
+	connectors := make([]string, 0)
+	for _, c := range connectorTypes {
+		connectors = append(connectors, c.String())
+	}
+
+	return connectors, nil
+}
+
+func (e *CompletionEngine) suggestObjects(subject Subject, input string) ([]string, error) {
+	suggestions := make([]string, 0)
+	for _, subj := range subject.ValidTypes {
+		switch subj {
+		case DTypeTag:
+			for _, tag := range e.tagTrie.Search([]string{input}).Results {
+				suggestions = append(suggestions, tag.Value.(string))
+			}
+		case DTypeString, DTypeInt:
+		case DTypeDate:
+			suggestions = append(suggestions, "today", "yesterday", "tomorrow")
+		case DTypeDateTime:
+			suggestions = append(suggestions, "now")
+		}
+	}
+	return suggestions, nil
 }
 
 func getSubject(s string) (*Subject, error) {
@@ -135,9 +209,26 @@ func (e *CompletionEngine) buildVerbTrie(subject Subject) *trie.Trie {
 	return verbTrie
 }
 
-func (e *CompletionEngine) suggestFromSubject(verb string) ([]string, error) {
+func (e *CompletionEngine) buildTagTrie(tags []string) *trie.Trie {
+	tagTrie := trie.New()
+	for _, tag := range tags {
+		tagTrie.Put([]string{tag}, tag)
+	}
+	return tagTrie
+}
+
+func (e *CompletionEngine) buildConnectorTrie(subject Subject) *trie.Trie {
+	connectorTrie := trie.New()
+	for _, connector := range connectorTypes {
+		connectorTrie.Put([]string{connector.String()}, connector.String())
+	}
+	return connectorTrie
+}
+
+func (e *CompletionEngine) suggestFromSubject(subject Subject, verb string) ([]string, error) {
+	verbTrie := e.buildVerbTrie(subject)
 	verbs := make([]string, 0)
-	for _, v := range e.verbTrie.Search([]string{verb}).Results {
+	for _, v := range verbTrie.Search([]string{verb}).Results {
 		verbs = append(verbs, v.Value.(Verb).Name)
 	}
 
