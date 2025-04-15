@@ -39,6 +39,14 @@ func (s *Scanner) ScanLexeme() (Lexeme, error) {
 	return l, nil
 }
 
+type ErrInvalidLexeme struct {
+	Input byte
+}
+
+func (e ErrInvalidLexeme) Error() string {
+	return fmt.Sprintf("Invalid character, %v", e.Input)
+}
+
 func (s *Scanner) matchSymbols() (Lexeme, error) {
 	if s.matchSymbol() {
 		return s.consumeSymbol(), nil
@@ -50,7 +58,7 @@ func (s *Scanner) matchSymbols() (Lexeme, error) {
 	} else if s.matchAlphaNum() {
 		return s.consumeAlphaNum(), nil
 	} else {
-		return "", ErrInvalidCharacter{Input: s.S[s.Pos]}
+		return "", ErrInvalidLexeme{Input: s.S[s.Pos]}
 	}
 }
 
