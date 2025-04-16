@@ -77,7 +77,7 @@ func (e *CompletionEngine) Suggest(s string) ([]string, error) {
 		if err != nil {
 			switch err.(type) {
 			case ErrEndOfInput:
-				exit = false
+				exit = true
 			case ErrInvalidSubject:
 				err := err.(ErrInvalidSubject)
 				return e.SuggestSubject(string(err.Lexeme))
