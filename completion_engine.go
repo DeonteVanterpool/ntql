@@ -204,7 +204,11 @@ func (e *CompletionEngine) SuggestSubject(s string) ([]string, error) {
 func (e *CompletionEngine) buildVerbTrie(subject Subject) *trie.Trie {
 	verbTrie := trie.New()
 	for _, verb := range subject.ValidVerbs {
-		verbTrie.SearchAll(verb.Name)
+		verbTrie.Insert(verb.Name)
+		for _, alias := range verb.Aliases {
+			verbTrie.Insert(alias)
+
+		}
 	}
 	return verbTrie
 }
