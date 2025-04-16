@@ -5,7 +5,7 @@ import (
 
 	"fmt"
 
-	"github.com/shivamMg/trie"
+	trie "github.com/Vivino/go-autocomplete-trie"
 )
 
 type EngineState int
@@ -18,9 +18,9 @@ func NewMegaTrie() *MegaTrie {
 	subjectTrie := trie.New()
 	for _, subject := range validSubjects {
 		for _, alias := range subject.Aliases {
-			subjectTrie.Put([]string{alias}, subject)
+			subjectTrie.Insert(alias)
 		}
-		subjectTrie.Put([]string{subject.Name}, subject)
+		subjectTrie.Insert(subject.Name)
 	}
 	return &MegaTrie{
 		subjectTrie: subjectTrie,
@@ -47,7 +47,7 @@ func NewAutocompleteEngine(tags []string) *CompletionEngine {
 func NewConnectorTrie() *trie.Trie {
 	connectorTrie := trie.New()
 	for _, connector := range connectorTypes {
-		connectorTrie.Put([]string{connector.String()}, connector)
+		connectorTrie.Insert(connector.String())
 	}
 
 	return connectorTrie
@@ -56,7 +56,7 @@ func NewConnectorTrie() *trie.Trie {
 func NewTagTrie(tags []string) *trie.Trie {
 	tagTrie := trie.New()
 	for _, tag := range tags {
-		tagTrie.Put([]string{tag}, tag)
+		tagTrie.Insert(tag, tag)
 	}
 
 	return tagTrie
@@ -164,8 +164,8 @@ func (e *CompletionEngine) suggestObjects(subject Subject, input string) ([]stri
 	for _, subj := range subject.ValidTypes {
 		switch subj {
 		case DTypeTag:
-			for _, tag := range e.tagTrie.Search([]string{input}).Results {
-				suggestions = append(suggestions, tag.Value.(string))
+			for _, tag := range e.tagTrie.SearchAll(input) {
+				suggestions = append(suggestions, tag)
 			}
 		case DTypeString, DTypeInt:
 		case DTypeDate:
@@ -194,8 +194,8 @@ func getSubject(s string) (*Subject, error) {
 
 func (e *CompletionEngine) SuggestSubject(s string) ([]string, error) {
 	subjects := make([]string, 0)
-	for _, subject := range e.subjectTrie.Search([]string{s}).Results {
-		subjects = append(subjects, subject.Value.(Subject).Name)
+	for _, subject := range e.subjectTrie.SearchAll(s) {
+		subjects = append(subjects, subject)
 	}
 
 	return subjects, nil
@@ -204,7 +204,7 @@ func (e *CompletionEngine) SuggestSubject(s string) ([]string, error) {
 func (e *CompletionEngine) buildVerbTrie(subject Subject) *trie.Trie {
 	verbTrie := trie.New()
 	for _, verb := range subject.ValidVerbs {
-		verbTrie.Put([]string{verb.Name}, verb)
+		verbTrie.SearchAll(verb.Name)
 	}
 	return verbTrie
 }
@@ -212,7 +212,7 @@ func (e *CompletionEngine) buildVerbTrie(subject Subject) *trie.Trie {
 func (e *CompletionEngine) buildTagTrie(tags []string) *trie.Trie {
 	tagTrie := trie.New()
 	for _, tag := range tags {
-		tagTrie.Put([]string{tag}, tag)
+		tagTrie.Insert(tag)
 	}
 	return tagTrie
 }
@@ -220,7 +220,7 @@ func (e *CompletionEngine) buildTagTrie(tags []string) *trie.Trie {
 func (e *CompletionEngine) buildConnectorTrie(subject Subject) *trie.Trie {
 	connectorTrie := trie.New()
 	for _, connector := range connectorTypes {
-		connectorTrie.Put([]string{connector.String()}, connector.String())
+		connectorTrie.Insert(connector.String())
 	}
 	return connectorTrie
 }
@@ -228,8 +228,8 @@ func (e *CompletionEngine) buildConnectorTrie(subject Subject) *trie.Trie {
 func (e *CompletionEngine) suggestFromSubject(subject Subject, verb string) ([]string, error) {
 	verbTrie := e.buildVerbTrie(subject)
 	verbs := make([]string, 0)
-	for _, v := range verbTrie.Search([]string{verb}).Results {
-		verbs = append(verbs, v.Value.(Verb).Name)
+	for _, v := range verbTrie.SearchAll(verb) {
+		verbs = append(verbs, v)
 	}
 
 	return verbs, nil
