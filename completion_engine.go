@@ -32,8 +32,31 @@ type CompletionEngine struct {
 	subjectTrie   *trie.Trie
 	connectorTrie *trie.Trie
 	tagTrie       *trie.Trie
+	tags          []string
+	subjects      []string
+	verbs         []string
+	connectors    []string
 
 	lexer *Lexer
+}
+
+func GetValidSubjects() []string {
+	subjects := make([]string, 0)
+	for _, subject := range validSubjects {
+		subjects = append(subjects, subject.Name)
+		for _, alias := range subject.Aliases {
+			subjects = append(subjects, alias)
+		}
+	}
+	return subjects
+}
+
+func GetValidConnectors() []string {
+	connectors := make([]string, 0)
+	for _, connector := range connectorTypes {
+		connectors = append(connectors, connector.String())
+	}
+	return connectors
 }
 
 func NewAutocompleteEngine(tags []string) *CompletionEngine {
@@ -41,6 +64,10 @@ func NewAutocompleteEngine(tags []string) *CompletionEngine {
 		subjectTrie:   NewMegaTrie().subjectTrie,
 		connectorTrie: NewConnectorTrie(),
 		tagTrie:       NewTagTrie(tags),
+
+		tags:       tags,
+		subjects:   GetValidSubjects(),
+		connectors: GetValidConnectors(),
 	}
 }
 
@@ -84,7 +111,7 @@ func (e *CompletionEngine) Suggest(s string) ([]string, error) {
 			case ErrInvalidToken:
 				return []string{}, nil
 			default:
-				fmt.Errorf("Unexpected Error: %v", err.Error())
+				return nil, fmt.Errorf("Unexpected Error: %v", err.Error())
 			}
 		}
 		lastToken, err = e.lexer.lastToken()
@@ -151,6 +178,9 @@ func lastCharSpace(s string) bool {
 }
 
 func (e *CompletionEngine) suggestConnector(s string) ([]string, error) {
+	if s == "" {
+		return e.connectors, nil
+	}
 	connectors := make([]string, 0)
 	for _, c := range connectorTypes {
 		connectors = append(connectors, c.String())
@@ -165,6 +195,9 @@ func (e *CompletionEngine) suggestObjects(subject Subject, input string) ([]stri
 		switch subj {
 		case DTypeTag:
 			for _, tag := range e.tagTrie.SearchAll(input) {
+				if input == "" {
+					return e.tags, nil
+				}
 				suggestions = append(suggestions, tag)
 			}
 		case DTypeString, DTypeInt:
@@ -193,6 +226,9 @@ func getSubject(s string) (*Subject, error) {
 }
 
 func (e *CompletionEngine) SuggestSubject(s string) ([]string, error) {
+	if s == "" {
+		return e.subjects, nil
+	}
 	subjects := make([]string, 0)
 	for _, subject := range e.subjectTrie.SearchAll(s) {
 		subjects = append(subjects, subject)
@@ -203,13 +239,17 @@ func (e *CompletionEngine) SuggestSubject(s string) ([]string, error) {
 
 func (e *CompletionEngine) buildVerbTrie(subject Subject) *trie.Trie {
 	verbTrie := trie.New()
+	verbs := make([]string, 0)
 	for _, verb := range subject.ValidVerbs {
+		verbs = append(verbs, verb.Name)
 		verbTrie.Insert(verb.Name)
 		for _, alias := range verb.Aliases {
 			verbTrie.Insert(alias)
-
+			verbs = append(verbs, alias)
 		}
 	}
+
+	e.verbs = verbs
 	return verbTrie
 }
 
@@ -230,6 +270,10 @@ func (e *CompletionEngine) buildConnectorTrie(subject Subject) *trie.Trie {
 }
 
 func (e *CompletionEngine) suggestFromSubject(subject Subject, verb string) ([]string, error) {
+
+	if verb == "" {
+		return e.verbs, nil
+	}
 	verbTrie := e.buildVerbTrie(subject)
 	verbs := make([]string, 0)
 	for _, v := range verbTrie.SearchAll(verb) {

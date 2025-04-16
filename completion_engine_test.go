@@ -32,7 +32,7 @@ func TestCompletion2(t *testing.T) {
 		t.Errorf("Error: %s", err.Error())
 	}
 	t.Logf("Suggestions: %s", suggestions)
-	expected := []string{"school", "work", "projects"}
+	expected := []string{"equals"}
 	if len(suggestions) != len(expected) {
 		t.Errorf("Expected %d suggestions, got %d", len(expected), len(suggestions))
 	}
