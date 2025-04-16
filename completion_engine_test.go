@@ -50,7 +50,7 @@ func TestCompletion3(t *testing.T) {
 		t.Errorf("Error: %s", err.Error())
 	}
 	t.Logf("Suggestions: %s", suggestions)
-	expected := []string{"school"}
+	expected := []string{"school", "work", "projects"}
 	if len(suggestions) != len(expected) {
 		t.Errorf("Expected %d suggestions, got %d", len(expected), len(suggestions))
 	}
@@ -68,7 +68,7 @@ func TestCompletion4(t *testing.T) {
 		t.Errorf("Error: %s", err.Error())
 	}
 	t.Logf("Suggestions: %s", suggestions)
-	expected := []string{"tag", "state", "status"}
+	expected := []string{"title", "name", "due", "deadline", "status", "state", "priority", "project", "createdAt", "updatedAt", "completedAt", "createdBy", "tag"}
 	if len(suggestions) != len(expected) {
 		t.Errorf("Expected %d suggestions, got %d", len(expected), len(suggestions))
 	}

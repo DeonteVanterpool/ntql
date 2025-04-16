@@ -194,10 +194,11 @@ func (e *CompletionEngine) suggestObjects(subject Subject, input string) ([]stri
 	for _, subj := range subject.ValidTypes {
 		switch subj {
 		case DTypeTag:
+			if input == "" {
+				suggestions = append(suggestions, e.tags...)
+				continue
+			}
 			for _, tag := range e.tagTrie.SearchAll(input) {
-				if input == "" {
-					return e.tags, nil
-				}
 				suggestions = append(suggestions, tag)
 			}
 		case DTypeString, DTypeInt:
