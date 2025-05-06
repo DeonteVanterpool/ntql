@@ -211,7 +211,7 @@ func (s *Scanner) LastLexeme() (Lexeme, error) {
 }
 
 func (s *Scanner) HasNext() bool {
-	return s.atEnd()
+	return !s.atEnd()
 }
 
 func (s *Scanner) GetPosition() int {
