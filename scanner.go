@@ -1,16 +1,6 @@
 package ntql
 
-import "fmt"
-
 type Lexeme string
-
-type ScannerError struct {
-	Message error
-}
-
-func (e *ScannerError) Error() string {
-	return fmt.Sprintf("Scanner Error: %s", e.Message.Error())
-}
 
 type Scanner struct {
 	Lexemes []Lexeme
@@ -28,7 +18,7 @@ func (s *Scanner) ScanLexeme() (Lexeme, error) {
 		return "", ErrEndOfInput{}
 	}
 
-	l, err := s.matchSymbols()
+	l, err := s.match()
 
 	if err != nil {
 		return "", err
@@ -39,15 +29,63 @@ func (s *Scanner) ScanLexeme() (Lexeme, error) {
 	return l, nil
 }
 
-type ErrInvalidLexeme struct {
-	Input byte
+func (s *Scanner) LastLexeme() (Lexeme, error) {
+	if len(s.Lexemes) == 0 {
+		return "", ErrEndOfInput{}
+	}
+
+	return s.Lexemes[len(s.Lexemes)-1], nil
 }
 
-func (e ErrInvalidLexeme) Error() string {
-	return fmt.Sprintf("Invalid character, %v", e.Input)
+func (s *Scanner) HasNext() bool {
+	return !s.atEnd()
 }
 
-func (s *Scanner) matchSymbols() (Lexeme, error) {
+func (s *Scanner) GetPosition() int {
+	return s.Pos
+}
+
+func (s *Scanner) skipWhitespace() error {
+	for !s.atEnd() {
+		if !s.matchWhitespace() {
+			break
+		}
+
+		_, err := s.advance()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *Scanner) atEnd() bool {
+	return s.Pos >= len(s.S)
+}
+
+func (s *Scanner) advance() (byte, error) {
+	if s.atEnd() {
+		return '\x00', ErrEndOfInput{}
+	}
+	s.Pos += 1
+	return s.S[s.Pos-1], nil
+}
+
+func (s *Scanner) appendLexeme(l string) string {
+	s.Lexemes = append(s.Lexemes, Lexeme(l))
+	return l
+}
+
+func (s *Scanner) current() (byte, error) {
+	if s.atEnd() {
+		return '\x00', ErrEndOfInput{}
+	}
+
+	return s.S[s.Pos], nil
+}
+
+func (s *Scanner) match() (Lexeme, error) {
 	if s.matchSymbol() {
 		return s.consumeSymbol(), nil
 	} else if s.matchQuote() {
@@ -131,44 +169,13 @@ func (s *Scanner) matchWhitespace() bool {
 	return c == ' '
 }
 
-func (s *Scanner) skipWhitespace() error {
-	for !s.atEnd() {
-		if !s.matchWhitespace() {
-			break
-		}
-
-		_, err := s.advance()
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func (s *Scanner) matchAlphaNum() bool {
 	c, err := s.current()
 	if err != nil {
 		panic(err)
 	}
 
-	return isAlphaNum(c)
-}
-
-func isSymbol(c byte) bool {
-	return c == '!' || c == '(' || c == ')' || c == '.'
-}
-
-func (s *Scanner) atEnd() bool {
-	return s.Pos >= len(s.S)
-}
-
-func (s *Scanner) advance() (byte, error) {
-	if s.atEnd() {
-		return '\x00', ErrEndOfInput{}
-	}
-	s.Pos += 1
-	return s.S[s.Pos-1], nil
+	return alphaNumRegexp.MatchString(string(c))
 }
 
 func (s *Scanner) consumeAlphaNum() Lexeme {
@@ -187,33 +194,4 @@ func (s *Scanner) consumeAlphaNum() Lexeme {
 	}
 
 	return Lexeme(s.appendLexeme(l))
-}
-
-func (s *Scanner) appendLexeme(l string) string {
-	s.Lexemes = append(s.Lexemes, Lexeme(l))
-	return l
-}
-
-func (s *Scanner) current() (byte, error) {
-	if s.atEnd() {
-		return '\x00', ErrEndOfInput{}
-	}
-
-	return s.S[s.Pos], nil
-}
-
-func (s *Scanner) LastLexeme() (Lexeme, error) {
-	if len(s.Lexemes) == 0 {
-		return "", ErrEndOfInput{}
-	}
-
-	return s.Lexemes[len(s.Lexemes)-1], nil
-}
-
-func (s *Scanner) HasNext() bool {
-	return !s.atEnd()
-}
-
-func (s *Scanner) GetPosition() int {
-	return s.Pos
 }

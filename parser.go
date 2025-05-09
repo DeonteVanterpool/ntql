@@ -1,17 +1,11 @@
 package ntql
 
 import (
-	"fmt"
 	"strings"
 )
 
 // Data types for any objects passed as an argument to a function in the NTQL query
 type DType int
-
-type ParserError struct {
-	Message string
-	Token   Token
-}
 
 const (
 	DTypeString DType = iota
@@ -20,6 +14,42 @@ const (
 	DTypeTag
 	DTypeDateTime
 )
+
+// TODO: Sanitize input
+// BNF Grammar:
+// query = expr
+// expr = or_expr
+// or_expr = and_expr ("OR" and_expr)*
+// and_expr = not_expr ("AND" not_expr)*
+// not_expr = ["!"] term
+// term = func_call | "(" expr ")"
+// func_call = subject "." verb "(" value_expr ")" # subject from list of subjects, verb from subject verbs
+// value_expr = value_or
+// value_or = value_and ("OR" value_and)*
+// value_and = value_not ("AND" value_not)*
+// value_not = ["!"] value_term
+// value_term = "(" value_expr ")" | value
+// value = object # type belonging to current verb
+// object = NUMBER | STRING | DATE | TAG
+type Parser struct {
+	Tokens []Token
+	Pos    int
+}
+
+type ValueBinaryOp struct {
+	Operator Operator
+	Left     ValueExpr
+	Right    ValueExpr
+}
+
+type ValueUnaryOp struct {
+	Operator Operator
+	Operand  ValueExpr
+}
+
+type Value struct {
+	Value string
+}
 
 type Subject struct {
 	Name       string
@@ -131,31 +161,6 @@ var validSubjects = []Subject{
 	},
 }
 
-func (e *ParserError) Error() string {
-	return fmt.Sprintf("Error occurred at position %d: %s", e.Token.Position, e.Message)
-}
-
-// TODO: Sanitize input
-// BNF Grammar:
-// query = expr
-// expr = or_expr
-// or_expr = and_expr ("OR" and_expr)*
-// and_expr = not_expr ("AND" not_expr)*
-// not_expr = ["!"] term
-// term = func_call | "(" expr ")"
-// func_call = subject "." verb "(" value_expr ")" # subject from list of subjects, verb from subject verbs
-// value_expr = value_or
-// value_or = value_and ("OR" value_and)*
-// value_and = value_not ("AND" value_not)*
-// value_not = ["!"] value_term
-// value_term = "(" value_expr ")" | value
-// value = object # type belonging to current verb
-// object = NUMBER | STRING | DATE | TAG
-type Parser struct {
-	Tokens []Token
-	Pos    int
-}
-
 func (p *Parser) Parse() (QueryExpr, error) {
 	return p.Query()
 }
@@ -169,21 +174,6 @@ func NewParserError(message string, t Token) *ParserError {
 
 type ValueExpr interface {
 	Transform(subject string, verb string) (QueryExpr, error)
-}
-
-type ValueBinaryOp struct {
-	Operator Operator
-	Left     ValueExpr
-	Right    ValueExpr
-}
-
-type ValueUnaryOp struct {
-	Operator Operator
-	Operand  ValueExpr
-}
-
-type Value struct {
-	Value string
 }
 
 func (v *Value) Transform(subject string, verb string) (QueryExpr, error) {
@@ -223,17 +213,6 @@ func (p *Parser) match(t TokenType) bool {
 
 func (p *Parser) advance() {
 	p.Pos++
-}
-
-func (p *Parser) peek() Token {
-	if p.Pos >= len(p.Tokens) {
-		return Token{}
-	}
-	return p.Tokens[p.Pos]
-}
-
-func (p *Parser) isAtEnd() bool {
-	return p.Pos >= len(p.Tokens)
 }
 
 func (p *Parser) previous() Token {

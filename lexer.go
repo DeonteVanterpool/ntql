@@ -1,9 +1,5 @@
 package ntql
 
-import (
-	"fmt"
-)
-
 type Lexer struct {
 	Tokens            []Token
 	Scanner           *Scanner
@@ -13,49 +9,10 @@ type Lexer struct {
 	ExpectedDataTypes []DType
 }
 
-type ErrInvalidSubject struct {
-	Position int
-	Lexeme   Lexeme
-}
-
-func (e ErrInvalidSubject) Error() string {
-	return fmt.Sprintf("Invalid subject: %s", e.Lexeme)
-}
-
-type ErrEndOfInput struct{}
-
-func (e ErrInvalidToken) Error() string {
-	// convert expected tokens to string
-	var expected string
-	for i, t := range e.Expected {
-		if i == 0 {
-			expected = t.String()
-		} else {
-			expected = fmt.Sprintf("%s, %s", expected, t.String())
-		}
-	}
-
-	return fmt.Sprintf("Invalid lexme '%s': expected type from [%s]", e.Lexeme, expected)
-}
-
-type ErrInvalidToken struct {
-	Expected []TokenType
-	Position int
-	Lexeme   Lexeme
-}
-
 var connectorTypes = []TokenType{TokenAnd, TokenOr}
-
-func (e ErrEndOfInput) Error() string {
-	return fmt.Sprintf("End of input")
-}
 
 func NewLexer(s string) *Lexer {
 	return &Lexer{Tokens: []Token{}, Scanner: NewScanner(s), InnerDepth: 0, ExpectedTokens: []TokenType{TokenLParen, TokenBang, TokenSubject}}
-}
-
-func (l *Lexer) insideMethodCall() bool {
-	return l.InnerDepth > 0
 }
 
 // Lex takes a string and returns a slice of tokens
@@ -200,6 +157,25 @@ func (t *Lexer) ScanToken() error {
 	return nil
 }
 
+func (t *Lexer) GetPosition() int {
+	return t.Scanner.Pos
+}
+
+func (t *Lexer) LastLexeme() (Lexeme, error) {
+	return t.Scanner.LastLexeme()
+}
+
+func (l *Lexer) insideMethodCall() bool {
+	return l.InnerDepth > 0
+}
+
+func (t *Lexer) appendToken(kind TokenType, lexeme Lexeme) {
+	t.Tokens = append(t.Tokens, createToken(string(lexeme), kind, t.GetPosition()))
+}
+
+func (t *Lexer) atEnd() bool {
+	return t.Scanner.atEnd()
+}
 func (t *Lexer) lastToken() (Token, error) {
 	if len(t.Tokens) == 0 {
 		return Token{}, ErrEndOfInput{}
@@ -392,20 +368,4 @@ func (t *Lexer) matchDigit(lexeme Lexeme) (bool, error) {
 		return true, nil
 	}
 	return false, nil
-}
-
-func (t *Lexer) GetPosition() int {
-	return t.Scanner.Pos
-}
-
-func (t *Lexer) appendToken(kind TokenType, lexeme Lexeme) {
-	t.Tokens = append(t.Tokens, createToken(string(lexeme), kind, t.GetPosition()))
-}
-
-func (t *Lexer) atEnd() bool {
-	return t.Scanner.atEnd()
-}
-
-func (t *Lexer) LastLexeme() (Lexeme, error) {
-	return t.Scanner.LastLexeme()
 }
