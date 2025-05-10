@@ -1,8 +1,6 @@
 package ntql
 
 import (
-	// "regexp"
-
 	"fmt"
 
 	trie "github.com/Vivino/go-autocomplete-trie"
@@ -59,7 +57,7 @@ func GetValidConnectors() []string {
 	return connectors
 }
 
-func NewAutocompleteEngine(tags []string) *CompletionEngine {
+func NewCompletionEngine(tags []string) *CompletionEngine {
 	return &CompletionEngine{
 		subjectTrie:   NewMegaTrie().subjectTrie,
 		connectorTrie: NewConnectorTrie(),
@@ -154,8 +152,9 @@ func (e *CompletionEngine) Suggest(s string) ([]string, error) {
 			return e.suggestFromSubject(*lastSubject, lastToken.Literal)
 		case TokenTag, TokenBool, TokenString, TokenInt, TokenDate, TokenDateTime:
 			return e.suggestObjects(*lastSubject, lastToken.Literal)
-		case TokenOr, TokenAnd, TokenRParen: // TODO: handle incomplete connector cases on error
-			return []string{}, nil
+		case TokenOr, TokenAnd, TokenRParen:
+			str, _ := e.lexer.Scanner.LastLexeme() // last lexeme doesn't get turned into a token yet
+			return e.suggestConnector(string(str))
 		case TokenDot:
 			return e.suggestFromSubject(*lastSubject, lastToken.Literal)
 		case TokenBang, TokenLParen:
@@ -167,9 +166,6 @@ func (e *CompletionEngine) Suggest(s string) ([]string, error) {
 		}
 	}
 
-	// TODO: Test expected tokens when subject blank, when verb blank, when object blank, when tag blank, etc.
-	// End tokens: TokenBang, TokenDot, TokenLParen, TokenRParen
-	// if last token is end token, and no error: suggest from expected tokens
 	return nil, nil
 }
 
@@ -182,8 +178,8 @@ func (e *CompletionEngine) suggestConnector(s string) ([]string, error) {
 		return e.connectors, nil
 	}
 	connectors := make([]string, 0)
-	for _, c := range connectorTypes {
-		connectors = append(connectors, c.String())
+	for _, connector := range e.connectorTrie.SearchAll(s) {
+		connectors = append(connectors, connector)
 	}
 
 	return connectors, nil

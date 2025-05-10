@@ -10,7 +10,7 @@ var dateRegexp = regexp.MustCompile("^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
 var dateTimeRegexp = regexp.MustCompile("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$")
 var stringRegexp = regexp.MustCompile("^\".*\"$")
 
-// TokenType represents the class of token
+// objectType is a list of all the object types a token could possible represent
 var objectTypes = []TokenType{TokenInt, TokenString, TokenBool, TokenDate, TokenDateTime, TokenTag}
 
 func isSymbol(c byte) bool {
