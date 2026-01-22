@@ -9,6 +9,9 @@ The project consists of
     - evaluates the syntax tree into SQL
 - an autocompletion engine.
     - predicts the next possible token
+ 
+## Demo 
+The demo video can be viewed on video right [here](https://drive.google.com/file/d/1TJY_Jc4UP607mJEEj3nrePgT30Ji70ws/view?usp=sharing). You can also install a web server with NTQL and test the language [here](https://github.com/DeonteVanterpool/ntql-demo)
 
 ## Syntax
 Multiple queries can be connected using connectors such as `AND` or `OR`. Queries can also be negated using an exclamation mark `!`. You can even influence the order in which each query is evaluated by using parentheses
