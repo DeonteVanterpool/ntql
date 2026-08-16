@@ -98,6 +98,35 @@ jobs:
       - name: Run cross-table join tests
         run: go test -run '^TestJoin' ./...
 
+  security-checks:
+    name: Security Checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: go
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v3
+
   build:
     name: Build
     runs-on: ubuntu-latest
@@ -107,6 +136,7 @@ jobs:
       - schema-validation
       - integration-tests
       - cross-table-join-tests
+      - security-checks
     steps:
       - name: Checkout
         uses: actions/checkout@v4
