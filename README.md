@@ -1,5 +1,5 @@
-# NTQL
-NTQL (NolaTask Query Language) is a domain specific language designed to filter todo list items by certain criteria.
+# SSQL
+SSQL (Super Simple Query Language) is a domain specific language designed to convert simple queries into SQL WHERE clauses in order to be able to filter items by certain criteria. The schema is configurable via `schema.yaml` and supports cross-table joins. It also supports using an completion engine.
 
 The project consists of 
 - a compiler / transpiler
@@ -8,10 +8,10 @@ The project consists of
     - creates a syntax tree
     - evaluates the syntax tree into SQL
 - an autocompletion engine.
-    - predicts the next possible token
+    - predicts the next possible token 
  
 ## Demo 
-The demo video can be viewed on video right [here](https://drive.google.com/file/d/1TJY_Jc4UP607mJEEj3nrePgT30Ji70ws/view?usp=sharing). You can also install a web server with NTQL and test the language [here](https://github.com/DeonteVanterpool/ntql-demo)
+The demo video can be viewed on video right [here](https://drive.google.com/file/d/1TJY_Jc4UP607mJEEj3nrePgT30Ji70ws/view?usp=sharing). You can also install a web server with SSQL and test the language [here](https://github.com/DeonteVanterpool/ntql-demo)
 
 ## Syntax
 Multiple queries can be connected using connectors such as `AND` or `OR`. Queries can also be negated using an exclamation mark `!`. You can even influence the order in which each query is evaluated by using parentheses
