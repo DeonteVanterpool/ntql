@@ -56,6 +56,8 @@ type Subject struct {
 	Aliases    []string
 	ValidVerbs []Verb
 	ValidTypes []DType
+	Table      string
+	Column     string
 }
 
 type Verb struct {

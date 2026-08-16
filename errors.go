@@ -41,7 +41,7 @@ func (e ErrInvalidSubject) Error() string {
 }
 
 func (e ErrEndOfInput) Error() string {
-	return fmt.Sprintf("End of input")
+	return "End of input"
 }
 
 func (e ErrInvalidToken) Error() string {
