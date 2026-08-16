@@ -1,0 +1,144 @@
+subjects:
+  - name: title
+    aliases:
+      - name
+    validVerbs:
+      - name: startswith
+        aliases: []
+      - name: endswith
+        aliases: []
+      - name: contains
+        aliases: []
+      - name: equals
+        aliases:
+          - eq
+    validTypes:
+      - string
+
+  - name: due
+    aliases:
+      - deadline
+    validVerbs:
+      - name: before
+        aliases: []
+      - name: after
+        aliases: []
+      - name: equals
+        aliases: []
+    validTypes:
+      - date
+      - dateTime
+
+  - name: status
+    aliases:
+      - state
+    validVerbs:
+      - name: equals
+        aliases:
+          - eq
+    validTypes:
+      - string
+
+  - name: priority
+    aliases: []
+    validVerbs:
+      - name: equals
+        aliases:
+          - eq
+      - name: lessthan
+        aliases:
+          - lt
+      - name: greaterthan
+        aliases:
+          - gt
+      - name: lessthanorequal
+        aliases:
+          - lte
+      - name: greaterthanorequal
+        aliases:
+          - gte
+    validTypes:
+      - int
+
+  - name: project
+    aliases: []
+    validVerbs:
+      - name: equals
+        aliases:
+          - eq
+    validTypes:
+      - string
+
+  - name: createdAt
+    aliases: []
+    validVerbs:
+      - name: before
+        aliases: []
+      - name: after
+        aliases: []
+      - name: equals
+        aliases: []
+    validTypes:
+      - date
+      - dateTime
+
+  - name: updatedAt
+    aliases: []
+    validVerbs:
+      - name: before
+        aliases: []
+      - name: after
+        aliases: []
+      - name: equals
+        aliases: []
+    validTypes:
+      - date
+      - dateTime
+
+  - name: completedAt
+    aliases: []
+    validVerbs:
+      - name: before
+        aliases: []
+      - name: after
+        aliases: []
+      - name: equals
+        aliases: []
+    validTypes:
+      - date
+      - dateTime
+
+  - name: createdBy
+    aliases: []
+    validVerbs:
+      - name: equals
+        aliases:
+          - eq
+    validTypes:
+      - string
+
+  - name: tag
+    aliases: []
+    validVerbs:
+      - name: equals
+        aliases:
+          - eq
+    validTypes:
+      - tag
+
+fieldTypes:
+  dateTypes:
+    - due_date
+    - do_date
+    - created_at
+    - updated_at
+    - completed_at
+  boolTypes:
+    - hide_from_calendar
+    - all_day
+    - completed
+  numericTypes:
+    - priority
+  stringTypes:
+    - title
+    - description
