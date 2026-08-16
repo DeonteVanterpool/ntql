@@ -7,11 +7,6 @@ import (
 	"strconv"
 )
 
-var date_types = []string{"due_date", "do_date", "created_at", "updated_at", "completed_at"}
-var bool_types = []string{"hide_from_calendar", "all_day", "completed"}
-var numeric_types = []string{"priority"}
-var string_types = []string{"title", "description"}
-
 type QueryExpr interface {
 	// ToSQL converts the query expression to a SQL string.
 	ToSQL() (string, error)
