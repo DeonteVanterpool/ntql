@@ -324,20 +324,12 @@ func applySchemaConfig(cfg *schemaConfig) error {
 
 	tables := make([]SchemaTable, 0, len(cfg.Tables))
 	for _, table := range cfg.Tables {
-		tables = append(tables, SchemaTable{
-			Name:       table.Name,
-			PrimaryKey: table.PrimaryKey,
-		})
+		tables = append(tables, SchemaTable(table))
 	}
 
 	joins := make([]SchemaJoin, 0, len(cfg.Joins))
 	for _, join := range cfg.Joins {
-		joins = append(joins, SchemaJoin{
-			FromTable: join.FromTable,
-			ToTable:   join.ToTable,
-			FromKey:   join.FromKey,
-			ToKey:     join.ToKey,
-		})
+		joins = append(joins, SchemaJoin(join))
 	}
 
 	validSubjects = subjects
