@@ -249,8 +249,6 @@ func (t *Lexer) matchLParen(lexeme Lexeme) (bool, error) {
 				}
 			}
 			t.ExpectedTokens = append(t.ExpectedTokens, TokenBang)
-		} else { // keep same fsm state
-
 		}
 		t.appendToken(TokenLParen, lexeme)
 		return true, nil
@@ -264,7 +262,6 @@ func (t *Lexer) matchRParen(lexeme Lexeme) (bool, error) {
 		t.ExpectedTokens = append(connectorTypes, TokenRParen)
 		if t.InnerDepth != 0 { // if we are in a method
 			t.InnerDepth--
-		} else {
 		}
 		return true, nil
 	}

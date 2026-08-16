@@ -24,7 +24,9 @@ func (s *Scanner) ScanLexeme() (Lexeme, error) {
 		return "", err
 	}
 
-	s.skipWhitespace()
+	if err := s.skipWhitespace(); err != nil {
+		return "", err
+	}
 
 	return l, nil
 }
@@ -91,7 +93,9 @@ func (s *Scanner) match() (Lexeme, error) {
 	} else if s.matchQuote() {
 		return s.consumeQuote(), nil
 	} else if s.matchWhitespace() {
-		s.skipWhitespace()
+		if err := s.skipWhitespace(); err != nil {
+			return "", err
+		}
 		return s.ScanLexeme()
 	} else if s.matchAlphaNum() {
 		return s.consumeAlphaNum(), nil

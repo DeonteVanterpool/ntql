@@ -42,9 +42,7 @@ func GetValidSubjects() []string {
 	subjects := make([]string, 0)
 	for _, subject := range validSubjects {
 		subjects = append(subjects, subject.Name)
-		for _, alias := range subject.Aliases {
-			subjects = append(subjects, alias)
-		}
+		subjects = append(subjects, subject.Aliases...)
 	}
 	return subjects
 }
@@ -100,11 +98,10 @@ func (e *CompletionEngine) Suggest(s string) ([]string, error) {
 		err := e.lexer.ScanToken()
 		exit := false
 		if err != nil {
-			switch err.(type) {
+			switch err := err.(type) {
 			case ErrEndOfInput:
 				exit = true
 			case ErrInvalidSubject:
-				err := err.(ErrInvalidSubject)
 				return e.SuggestSubject(string(err.Lexeme))
 			case ErrInvalidToken:
 				return []string{}, nil
@@ -177,12 +174,7 @@ func (e *CompletionEngine) suggestConnector(s string) ([]string, error) {
 	if s == "" {
 		return e.connectors, nil
 	}
-	connectors := make([]string, 0)
-	for _, connector := range e.connectorTrie.SearchAll(s) {
-		connectors = append(connectors, connector)
-	}
-
-	return connectors, nil
+	return e.connectorTrie.SearchAll(s), nil
 }
 
 func (e *CompletionEngine) suggestObjects(subject Subject, input string) ([]string, error) {
@@ -194,9 +186,7 @@ func (e *CompletionEngine) suggestObjects(subject Subject, input string) ([]stri
 				suggestions = append(suggestions, e.tags...)
 				continue
 			}
-			for _, tag := range e.tagTrie.SearchAll(input) {
-				suggestions = append(suggestions, tag)
-			}
+			suggestions = append(suggestions, e.tagTrie.SearchAll(input)...)
 		case DTypeString, DTypeInt:
 		case DTypeDate:
 			suggestions = append(suggestions, "today", "yesterday", "tomorrow")
@@ -226,12 +216,7 @@ func (e *CompletionEngine) SuggestSubject(s string) ([]string, error) {
 	if s == "" {
 		return e.subjects, nil
 	}
-	subjects := make([]string, 0)
-	for _, subject := range e.subjectTrie.SearchAll(s) {
-		subjects = append(subjects, subject)
-	}
-
-	return subjects, nil
+	return e.subjectTrie.SearchAll(s), nil
 }
 
 func (e *CompletionEngine) buildVerbTrie(subject Subject) *trie.Trie {
@@ -250,34 +235,13 @@ func (e *CompletionEngine) buildVerbTrie(subject Subject) *trie.Trie {
 	return verbTrie
 }
 
-func (e *CompletionEngine) buildTagTrie(tags []string) *trie.Trie {
-	tagTrie := trie.New()
-	for _, tag := range tags {
-		tagTrie.Insert(tag)
-	}
-	return tagTrie
-}
-
-func (e *CompletionEngine) buildConnectorTrie(subject Subject) *trie.Trie {
-	connectorTrie := trie.New()
-	for _, connector := range connectorTypes {
-		connectorTrie.Insert(connector.String())
-	}
-	return connectorTrie
-}
-
 func (e *CompletionEngine) suggestFromSubject(subject Subject, verb string) ([]string, error) {
 
 	if verb == "" {
 		return e.verbs, nil
 	}
 	verbTrie := e.buildVerbTrie(subject)
-	verbs := make([]string, 0)
-	for _, v := range verbTrie.SearchAll(verb) {
-		verbs = append(verbs, v)
-	}
-
-	return verbs, nil
+	return verbTrie.SearchAll(verb), nil
 }
 
 type AutocompleteError struct {
