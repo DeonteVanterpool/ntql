@@ -19,11 +19,15 @@ var (
 	bool_types    = []string{}
 	numeric_types = []string{}
 	string_types  = []string{}
+	schemaTables  = []SchemaTable{}
+	schemaJoins   = []SchemaJoin{}
 )
 
 type schemaConfig struct {
 	Subjects   []schemaSubject  `yaml:"subjects"`
 	FieldTypes schemaFieldTypes `yaml:"fieldTypes"`
+	Tables     []schemaTable    `yaml:"tables"`
+	Joins      []schemaJoin     `yaml:"joins"`
 }
 
 type schemaSubject struct {
@@ -31,6 +35,8 @@ type schemaSubject struct {
 	Aliases    []string     `yaml:"aliases"`
 	ValidVerbs []schemaVerb `yaml:"validVerbs"`
 	ValidTypes []string     `yaml:"validTypes"`
+	Table      string       `yaml:"table"`
+	Column     string       `yaml:"column"`
 }
 
 type schemaVerb struct {
@@ -45,12 +51,38 @@ type schemaFieldTypes struct {
 	StringTypes  []string `yaml:"stringTypes"`
 }
 
+type schemaTable struct {
+	Name       string `yaml:"name"`
+	PrimaryKey string `yaml:"primaryKey"`
+}
+
+type schemaJoin struct {
+	FromTable string `yaml:"fromTable"`
+	ToTable   string `yaml:"toTable"`
+	FromKey   string `yaml:"fromKey"`
+	ToKey     string `yaml:"toKey"`
+}
+
+type SchemaTable struct {
+	Name       string
+	PrimaryKey string
+}
+
+type SchemaJoin struct {
+	FromTable string
+	ToTable   string
+	FromKey   string
+	ToKey     string
+}
+
 type LoadedSchema struct {
 	ValidSubjects []Subject
 	DateTypes     []string
 	BoolTypes     []string
 	NumericTypes  []string
 	StringTypes   []string
+	Tables        []SchemaTable
+	Joins         []SchemaJoin
 }
 
 func init() {
@@ -94,6 +126,8 @@ func GetLoadedSchema() LoadedSchema {
 		BoolTypes:     append([]string{}, bool_types...),
 		NumericTypes:  append([]string{}, numeric_types...),
 		StringTypes:   append([]string{}, string_types...),
+		Tables:        append([]SchemaTable{}, schemaTables...),
+		Joins:         append([]SchemaJoin{}, schemaJoins...),
 	}
 }
 
@@ -195,6 +229,44 @@ func validateSchemaConfig(cfg *schemaConfig) error {
 		return err
 	}
 
+	seenTables := map[string]struct{}{}
+	for _, table := range cfg.Tables {
+		if table.Name == "" {
+			return errors.New("table name cannot be empty")
+		}
+		if table.PrimaryKey == "" {
+			return fmt.Errorf("table %s must define a primary key", table.Name)
+		}
+		key := toLowerCase(table.Name)
+		if _, exists := seenTables[key]; exists {
+			return fmt.Errorf("duplicate table name: %s", table.Name)
+		}
+		seenTables[key] = struct{}{}
+	}
+
+	if len(cfg.Tables) > 0 {
+		for _, subject := range cfg.Subjects {
+			if subject.Table == "" {
+				return fmt.Errorf("subject %s must map to a table when tables are defined", subject.Name)
+			}
+			if _, exists := seenTables[toLowerCase(subject.Table)]; !exists {
+				return fmt.Errorf("subject %s references unknown table: %s", subject.Name, subject.Table)
+			}
+		}
+	}
+
+	for _, join := range cfg.Joins {
+		if join.FromTable == "" || join.ToTable == "" || join.FromKey == "" || join.ToKey == "" {
+			return errors.New("join definitions must include fromTable, toTable, fromKey, and toKey")
+		}
+		if _, exists := seenTables[toLowerCase(join.FromTable)]; !exists {
+			return fmt.Errorf("join references unknown table: %s", join.FromTable)
+		}
+		if _, exists := seenTables[toLowerCase(join.ToTable)]; !exists {
+			return fmt.Errorf("join references unknown table: %s", join.ToTable)
+		}
+	}
+
 	return nil
 }
 
@@ -245,6 +317,26 @@ func applySchemaConfig(cfg *schemaConfig) error {
 			Aliases:    append([]string{}, subject.Aliases...),
 			ValidVerbs: validVerbs,
 			ValidTypes: validTypes,
+			Table:      subject.Table,
+			Column:     subject.Column,
+		})
+	}
+
+	tables := make([]SchemaTable, 0, len(cfg.Tables))
+	for _, table := range cfg.Tables {
+		tables = append(tables, SchemaTable{
+			Name:       table.Name,
+			PrimaryKey: table.PrimaryKey,
+		})
+	}
+
+	joins := make([]SchemaJoin, 0, len(cfg.Joins))
+	for _, join := range cfg.Joins {
+		joins = append(joins, SchemaJoin{
+			FromTable: join.FromTable,
+			ToTable:   join.ToTable,
+			FromKey:   join.FromKey,
+			ToKey:     join.ToKey,
 		})
 	}
 
@@ -253,6 +345,8 @@ func applySchemaConfig(cfg *schemaConfig) error {
 	bool_types = append([]string{}, cfg.FieldTypes.BoolTypes...)
 	numeric_types = append([]string{}, cfg.FieldTypes.NumericTypes...)
 	string_types = append([]string{}, cfg.FieldTypes.StringTypes...)
+	schemaTables = tables
+	schemaJoins = joins
 
 	return nil
 }
@@ -269,6 +363,8 @@ func copySubjects(subjects []Subject) []Subject {
 			Aliases:    append([]string{}, subject.Aliases...),
 			ValidVerbs: validVerbs,
 			ValidTypes: append([]DType{}, subject.ValidTypes...),
+			Table:      subject.Table,
+			Column:     subject.Column,
 		})
 	}
 	return copied
