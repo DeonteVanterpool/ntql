@@ -1,6 +1,6 @@
-# NTQL
+# SSQL
 
-NTQL (Natural Task Query Language) is an evolution of SSQL (Super Simple Query Language). It is a domain-specific language designed to convert human-readable queries into SQL `WHERE` clauses for filtering tasks and related data. The schema is fully configurable via `schema.yaml` and supports automatic cross-table join resolution.
+SSQL (Super Simple Query Language) is a domain-specific language designed to convert human-readable queries into SQL `WHERE` clauses for filtering tasks and related data. The schema is fully configurable via `schema.yaml` and supports automatic cross-table join resolution.
 
 The project consists of:
 - A **compiler / transpiler** that:
