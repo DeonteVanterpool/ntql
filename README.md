@@ -12,7 +12,7 @@ The project consists of:
 
 ## Demo
 
-The demo video can be viewed [here](https://drive.google.com/file/d/1TJY_Jc4UP607mJEEj3nrePgT30Ji70ws/view?usp=sharing). You can also install a web server with NTQL and test the language [here](https://github.com/DeonteVanterpool/ntql-demo).
+The demo video can be viewed [here](https://drive.google.com/file/d/1TJY_Jc4UP607mJEEj3nrePgT30Ji70ws/view?usp=sharing). You can also install a web server with SSQL and test the language [here](https://github.com/DeonteVanterpool/ntql-demo).
 
 ---
 
@@ -96,7 +96,7 @@ object     = NUMBER | STRING | DATE | DATETIME | TAG
 
 ## Schema
 
-NTQL reads its schema from `schema.yaml` (embedded at compile time). The schema controls which subjects, verbs, and value types are valid, and how subjects map to database tables and columns.
+SSQL reads its schema from `schema.yaml` (embedded at compile time). The schema controls which subjects, verbs, and value types are valid, and how subjects map to database tables and columns.
 
 ### Subjects
 
@@ -167,7 +167,7 @@ joins:
 
 ### Subject mappings
 
-When `tables` are defined in the schema, every subject **must** declare a `table` and `column` mapping. NTQL uses these mappings to determine which table a condition belongs to and to generate the correct qualified column reference in the output SQL.
+When `tables` are defined in the schema, every subject **must** declare a `table` and `column` mapping. SSQL uses these mappings to determine which table a condition belongs to and to generate the correct qualified column reference in the output SQL.
 
 ```yaml
 subjects:
@@ -189,7 +189,7 @@ subjects:
 
 ## Multi-table query examples
 
-When a query references subjects from more than one table, NTQL automatically resolves the required joins and generates a complete SQL statement with table aliases.
+When a query references subjects from more than one table, SSQL automatically resolves the required joins and generates a complete SQL statement with table aliases.
 
 ### Single table (no join needed)
 
@@ -244,7 +244,7 @@ Subjects support aliases, allowing natural alternatives (`name` for `title`, `de
 
 ### Cross-table relationships
 
-NTQL resolves multi-table queries automatically. You write predicates using logical subject names; the engine figures out which tables to join and produces a single, correct SQL statement.
+SSQL resolves multi-table queries automatically. You write predicates using logical subject names; the engine figures out which tables to join and produces a single, correct SQL statement.
 
 ### Type safety
 
@@ -257,7 +257,7 @@ Each subject declares the value types it accepts, and the compiler enforces this
 - **Simple surface syntax** — the query language is intentionally minimal so non-technical users can write queries without knowing SQL.
 - **Configurable schema** — all subjects, verbs, tables, and joins are declared in `schema.yaml`. No code changes are required to add a new filterable field.
 - **Safe SQL output** — inputs are validated and escaped before being embedded in SQL to prevent injection.
-- **Composable AST** — the AST can be built programmatically as well as parsed from a string, making NTQL useful as an embedded query-builder library.
+- **Composable AST** — the AST can be built programmatically as well as parsed from a string, making SSQL useful as an embedded query-builder library.
 
 ---
 
