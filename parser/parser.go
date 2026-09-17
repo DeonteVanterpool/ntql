@@ -15,6 +15,7 @@ const (
 	DTypeDateTime
 )
 
+// TODO: Sanitize input
 // BNF Grammar:
 // query = expr
 // expr = or_expr
@@ -158,10 +159,6 @@ var validSubjects = []Subject{
 		},
 		ValidTypes: []DType{DTypeTag},
 	},
-}
-
-func SetValidSubjects(subjects []Subject) {
-	validSubjects = subjects
 }
 
 func (p *Parser) Parse() (QueryExpr, error) {

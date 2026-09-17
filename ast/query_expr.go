@@ -145,34 +145,28 @@ func (q *QueryCondition) String() string {
 	return q.Field + " " + q.Operator.ToStr() + " " + q.Value
 }
 
-type SpecialFieldHandler func(c *QueryCondition) (string, error)
-
-func SetSpecialFields(m map[string]SpecialFieldHandler) {
-	specialFields = m
-}
-
-var specialFields = map[string]SpecialFieldHandler{
-	"tag": func(c *QueryCondition) (string, error) {
-		value := c.Value
-		operator := c.Operator
-		_, err := strconv.Atoi(value)
+// TODO: Input sanitization
+// Convert the query condition to a SQL string.
+func (c *QueryCondition) ToSQL() (string, error) {
+	if c.Field == "tag" {
+		_, err := strconv.Atoi(c.Value)
 		if err != nil {
-			switch operator {
+			switch c.Operator {
 			case OperatorEq:
-				return "tag_id = (SELECT id FROM atomic_tags WHERE title = '" + value + "')", nil
+				return "tag_id = (SELECT id FROM atomic_tags WHERE title = '" + c.Value + "')", nil
 			case OperatorNeq:
-				return "tag_id = (SELECT id FROM atomic_tags WHERE title != '" + value + "')", nil
+				return "tag_id = (SELECT id FROM atomic_tags WHERE title != '" + c.Value + "')", nil
 			case OperatorCnt:
-				return "tag_id = (SELECT id FROM atomic_tags WHERE title LIKE '%" + value + "%')", nil
+				return "tag_id = (SELECT id FROM atomic_tags WHERE title LIKE '%" + c.Value + "%')", nil
 			case OperatorSW:
-				return "tag_id = (SELECT id FROM atomic_tags WHERE title LIKE '" + value + "%')", nil
+				return "tag_id = (SELECT id FROM atomic_tags WHERE title LIKE '" + c.Value + "%')", nil
 			case OperatorEw:
-				return "tag_id = (SELECT id FROM atomic_tags WHERE title LIKE '%" + value + "')", nil
+				return "tag_id = (SELECT id FROM atomic_tags WHERE title LIKE '%" + c.Value + "')", nil
 			default:
 				return "", errors.New("invalid operator: " + c.Operator.ToStr() + " for field: " + c.Field)
 			}
 		} else {
-			switch operator {
+			switch c.Operator {
 			case OperatorEq:
 				return "tag_id = (SELECT id FROM atomic_tags WHERE id = " + c.Value + ")", nil
 			case OperatorNeq:
@@ -181,24 +175,19 @@ var specialFields = map[string]SpecialFieldHandler{
 				return "", errors.New("invalid operator: " + c.Operator.ToStr() + " for field: " + c.Field)
 			}
 		}
-	},
-
-	"completed": func(c *QueryCondition) (string, error) {
-		// your existing completed SQL generation logic here
-		if (c.Value == "true" && c.Operator.ToStr() == "equals") || (c.Value == "false" && c.Operator.ToStr() == "notEquals") {
-			return "completed_at < NOW()", nil
-		} else if (c.Value == "true" && c.Operator == "notEquals") || (c.Value == "false" && c.Operator == "equals") {
-			return "completed_at > NOW() OR completed_at IS NULL", nil
-		}
-		return "", errors.New("invalid value for completed field: " + c.Value)
-	},
-}
-
-func (c *QueryCondition) ToSQL() (string, error) {
-	if handler, ok := specialFields[c.Field]; ok {
-		return handler(c)
 	}
 
+	if c.Field == "completed" {
+		if (c.Value == "true" && c.Operator == OperatorEq) || (c.Value == "false" && c.Operator == OperatorNeq) {
+			// return if completed_at before now
+			return "completed_at < NOW()", nil
+		} else if (c.Value == "true" && c.Operator == OperatorNeq) || (c.Value == "false" && c.Operator == OperatorEq) {
+			// return if completed_at after now or NULL
+			return "completed_at > NOW() OR completed_at IS NULL", nil
+		} else {
+			return "", errors.New("invalid value: " + c.Value + " for field: " + c.Field)
+		}
+	}
 	if slices.Contains(date_types, c.Field) {
 		// check if datetime is in the ISO 8601 format
 		if !regexp.MustCompile(`^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}Z)?$`).MatchString(c.Value) {
