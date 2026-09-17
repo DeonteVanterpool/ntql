@@ -60,6 +60,9 @@ value = object # type belonging to current verb
 object = NUMBER | STRING | DATE | TAG
 ```
 
-## Design
+## Language Design
 The design of the language was created to make autocompletion highly deterministic. It does so by limiting the number of possibilities for the next token class. There can only be a limited number of data types for each expected token.
+
+## Custom Languages
+If you want to modify the default language it can be easily done using SetSpecialFields in `query_expr.go`, and SetValidSubjects in `parser.go`
 
