@@ -1,5 +1,5 @@
-# NTQL
-NTQL (NolaTask Query Language) is a domain specific language designed to filter todo list items by certain criteria.
+# SSQL
+SSQL (Super Simple Query Language --formally NTQL aka. NolaTask Query Language) is a domain specific language designed to filter todo list items by certain criteria.
 
 The project consists of 
 - a compiler / transpiler
